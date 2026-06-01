@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard GNC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161d;
+    --bg3: #1a1e28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #7a7f92;
+    --blue: #4a9eff;
+    --blue2: #1e6fd4;
+    --green: #2fcb8d;
+    --amber: #f5a623;
+    --purple: #9b7fe8;
+    --red: #f05050;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--blue2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 13px;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .status:hover { border-color: var(--blue); color: var(--text); }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: .4; }
+  }
+  .filters {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .filter-group label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .pill {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 0.5px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .pill:hover { border-color: rgba(255,255,255,.3); color: var(--text); }
+  .pill.on-blue  { background: rgba(74,158,255,.15); border-color: var(--blue); color: var(--blue); }
+  .pill.on-green { background: rgba(47,203,141,.12); border-color: var(--green); color: var(--green); }
+  .pill.on-amber { background: rgba(245,166,35,.12); border-color: var(--amber); color: var(--amber); }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .mc {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    transition: border-color .2s;
+  }
+  .mc:hover { border-color: var(--border2); }
+  .mc-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .mc-val {
+    font-size: 22px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .mc-sub { font-size: 11px; color: var(--muted); }
+  .mc-val.blue { color: var(--blue); }
+  .mc-val.green { color: var(--green); }
+  .mc-val.amber { color: var(--amber); }
+  .mc-val.purple { color: var(--purple); }
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  @media(max-width:640px) { .grid2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--border2); }
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .leg-sq {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--muted);
+    font-size: 13px;
+    gap: 8px;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error-msg {
+    display: none;
+    background: rgba(240,80,80,.1);
+    border: 0.5px solid rgba(240,80,80,.3);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--red);
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .donut-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .donut-legend-row span:last-child {
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">GNC</div>
+    <div>
+      <h1>Dashboard de ventas</h1>
+      <div class="subtitle" id="last-update">Cargando datos…</div>
+    </div>
+  </div>
+  <button class="status" onclick="loadData()" title="Actualizar datos">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="status-txt">En vivo</span>
+  </button>
+</header>
+
+<div id="error-msg"></div>
+
+<div class="filters" id="filters-area">
+  <div class="filter-group">
+    <label>Mes</label>
+    <div class="pills" id="fg-mes"></div>
+  </div>
+  <div class="filter-group">
+    <label>Turno</label>
+    <div class="pills" id="fg-turno"></div>
+  </div>
+  <div class="filter-group">
+    <label>Playero</label>
+    <div class="pills" id="fg-playero"></div>
+  </div>
+</div>
+
+<div class="metrics" id="metrics-area">
+  <div class="mc"><div class="mc-label">Total m³ GNC</div><div class="mc-val blue" id="m-gnc">—</div><div class="mc-sub" id="m-gnc-s">—</div></div>
+  <div class="mc"><div class="mc-label">Promedio diario</div><div class="mc-val green" id="m-avg">—</div><div class="mc-sub">m³ por día</div></div>
+  <div class="mc"><div class="mc-label">Lts aceite suelto</div><div class="mc-val amber" id="m-aceite">—</div><div class="mc-sub">total período</div></div>
+  <div class="mc"><div class="mc-label">Playero líder</div><div class="mc-val purple" id="m-lider" style="font-size:16px;letter-spacing:0">—</div><div class="mc-sub" id="m-lider-s">—</div></div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <div class="card-title">Venta total GNC por día (m³)</div>
+  <div style="position:relative;width:100%;height:220px">
+    <canvas id="cDia" role="img" aria-label="Ventas diarias GNC">Ventas diarias de GNC.</canvas>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="card-title">Ranking de playeros</div>
+    <div class="legend">
+      <span><span class="leg-sq" style="background:#4a9eff"></span>m³ GNC</span>
+      <span><span class="leg-sq" style="background:#2fcb8d"></span>Lts aceite</span>
+    </div>
+    <div id="rankWrap" style="position:relative;width:100%;height:340px">
+      <canvas id="cRank" role="img" aria-label="Ranking playeros por GNC y aceite">Ranking playeros.</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Distribución por turno</div>
+    <div id="donutArea" style="margin-top:8px">
+      <div class="donut-wrap">
+        <div style="position:relative;width:160px;height:160px;flex-shrink:0">
+          <canvas id="cTurno" role="img" aria-label="GNC por turno">Distribución por turno.</canvas>
+        </div>
+        <div class="donut-legend" id="dleg"></div>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <div class="card-title" style="margin-bottom:10px">GNC acumulado por mes</div>
+      <div style="position:relative;width:100%;height:120px">
+        <canvas id="cMes" role="img" aria-label="GNC por mes">GNC por mes.</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>Datos: Google Sheets — se actualiza al abrir o al hacer clic en "En vivo"</footer>
+
+<script>
+const CSV_URL = 'https://script.google.com/macros/s/AKfycbybmBXSktVnanCMg6ddZRAiCtBR6aCZHahmLyX6QiuO_kibrqoFOINLvICMQWvtY2ZB/exec';
+
+const N = v => parseFloat(String(v).replace(',','.')) || 0;
+
+function parseCSV(txt) {
+  const lines = txt.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line => {
+    const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g) || [];
+    const row = {};
+    headers.forEach((h,i) => {
+      row[h] = (vals[i]||'').trim().replace(/^"|"$/g,'');
+    });
+    return row;
+  }).filter(r => r['Fecha'] && r['Fecha'].match(/\d{2}-\d{2}-\d{4}/));
+}
+
+function monthLabel(f) {
+  const [d,m,y] = f.split('-');
+  const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return mNames[parseInt(m)] + ' ' + y.slice(2);
+}
+
+let ALL = [], selMes, selTurno, selPlayero;
+let chartDia, chartRank, chartTurno, chartMes;
+
+async function loadData() {
+  document.getElementById('status-dot').style.background = '#f5a623';
+  document.getElementById('status-txt').textContent = 'Actualizando…';
+  document.getElementById('last-update').textContent = 'Cargando…';
+  document.getElementById('error-msg').style.display = 'none';
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const txt = await res.text();
+    ALL = parseCSV(txt).map(r => ({
+      f: r['Fecha'],
+      m: monthLabel(r['Fecha']),
+      t: r['Turno'],
+      p: r['Playero (3F)'],
+      gnc: N(r['Venta Total GNC (14A)']),
+      ac: N(r['Lts aceite suelto'])
+    })).filter(r => r.gnc > 0 || r.ac > 0);
+
+    const MESES = [...new Set(ALL.map(r=>r.m))];
+    const TURNOS = ['Mañana','Tarde','Noche'];
+    const PLAYEROS = [...new Set(ALL.map(r=>r.p).filter(Boolean))].sort();
+
+    if (!selMes) { selMes = new Set(MESES); selTurno = new Set(TURNOS); selPlayero = new Set(PLAYEROS); }
+    else {
+      MESES.forEach(m => selMes.add(m));
+      PLAYEROS.forEach(p => selPlayero.add(p));
+    }
+
+    buildPills('fg-mes', MESES, selMes, 'on-blue');
+    buildPills('fg-turno', TURNOS, selTurno, 'on-amber');
+    buildPills('fg-playero', PLAYEROS, selPlayero, 'on-green');
+
+    const now = new Date();
+    document.getElementById('last-update').textContent =
+      'Actualizado ' + now.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('status-dot').style.background = '#2fcb8d';
+    document.getElementById('status-txt').textContent = 'En vivo';
+    render();
+  } catch(e) {
+    document.getElementById('status-dot').style.background = '#f05050';
+    document.getElementById('status-txt').textContent = 'Error';
+    document.getElementById('last-update').textContent = 'No se pudo cargar';
+    const errEl = document.getElementById('error-msg');
+    errEl.style.display = 'block';
+    errEl.textContent = 'No se pudieron cargar los datos. Verificá que la planilla esté publicada. (' + e.message + ')';
+  }
+}
+
+function buildPills(id, items, selSet, onClass) {
+  const el = document.getElementById(id);
+  const existing = [...el.querySelectorAll('.pill')].map(b=>b.dataset.val);
+  if (JSON.stringify(existing.slice(1)) === JSON.stringify(items)) {
+    refreshPills(el, selSet, onClass, items); return;
+  }
+  el.innerHTML = '';
+  const allBtn = document.createElement('button');
+  allBtn.className = 'pill ' + onClass;
+  allBtn.textContent = 'Todos';
+  allBtn.dataset.val = '__all__';
+  el.appendChild(allBtn);
+  items.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'pill';
+    b.textContent = v;
+    b.dataset.val = v;
+    el.appendChild(b);
+  });
+  el.onclick = e => {
+    const btn = e.target.closest('.pill'); if (!btn) return;
+    const val = btn.dataset.val;
+    if (val === '__all__') {
+      if (selSet.size === items.length) selSet.clear();
+      else items.forEach(i => selSet.add(i));
+    } else {
+      if (selSet.has(val)) selSet.delete(val); else selSet.add(val);
+    }
+    refreshPills(el, selSet, onClass, items);
+    render();
+  };
+  refreshPills(el, selSet, onClass, items);
+}
+
+function refreshPills(el, selSet, onClass, items) {
+  el.querySelectorAll('.pill').forEach(b => {
+    const val = b.dataset.val;
+    b.className = 'pill ' + (val==='__all__' ? (selSet.size===items.length?onClass:'') : (selSet.has(val)?onClass:''));
+  });
+}
+
+function filtered() {
+  return ALL.filter(r => selMes&&selMes.has(r.m) && selTurno&&selTurno.has(r.t) && r.p&&selPlayero&&selPlayero.has(r.p));
+}
+
+function mkChart(id, cfg) {
+  const el = document.getElementById(id);
+  return new Chart(el, cfg);
+}
+
+function render() {
+  const data = filtered();
+  const totalGNC = data.reduce((s,r)=>s+r.gnc,0);
+  const totalAC  = Math.round(data.reduce((s,r)=>s+r.ac,0)*10)/10;
+  const dias = new Set(data.map(r=>r.f)).size;
+  const avg  = dias ? Math.round(totalGNC/dias) : 0;
+
+  const byP = {};
+  data.forEach(r=>{ if(!byP[r.p]){byP[r.p]={gnc:0,ac:0};} byP[r.p].gnc+=r.gnc; byP[r.p].ac+=r.ac; });
+  const sorted = Object.entries(byP).sort((a,b)=>b[1].gnc-a[1].gnc);
+  const lider = sorted[0];
+
+  document.getElementById('m-gnc').textContent   = totalGNC.toLocaleString('es-AR');
+  document.getElementById('m-gnc-s').textContent  = dias + ' días con datos';
+  document.getElementById('m-avg').textContent    = avg.toLocaleString('es-AR');
+  document.getElementById('m-aceite').textContent = totalAC.toLocaleString('es-AR') + ' L';
+  document.getElementById('m-lider').textContent  = lider ? lider[0] : '—';
+  document.getElementById('m-lider-s').textContent= lider ? lider[1].gnc.toLocaleString('es-AR')+' m³' : '—';
+
+  const dailyMap = {};
+  data.forEach(r=>{ if(!dailyMap[r.f])dailyMap[r.f]=0; dailyMap[r.f]+=r.gnc; });
+  const dKeys = Object.keys(dailyMap).sort((a,b)=>{
+    const p = s=>{ const [d,m,y]=s.split('-').map(Number); return new Date(y,m-1,d); };
+    return p(a)-p(b);
+  });
+  const dLabels = dKeys.map(d=>d.slice(0,5));
+  const dData   = dKeys.map(d=>dailyMap[d]);
+
+  if (chartDia) { chartDia.data.labels=dLabels; chartDia.data.datasets[0].data=dData; chartDia.update(); }
+  else chartDia = mkChart('cDia',{type:'bar',data:{labels:dLabels,datasets:[{label:'m³ GNC',data:dData,backgroundColor:'#1e6fd4',hoverBackgroundColor:'#4a9eff',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y.toLocaleString('es-AR')+' m³'}}},scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,color:'#7a7f92'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{font:{size:10},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}}}}});
+
+  const rNames = sorted.map(e=>e[0]);
+  const rGNC   = sorted.map(e=>e[1].gnc);
+  const rAC    = sorted.map(e=>Math.round(e[1].ac*10)/10);
+  const rh = Math.max(rNames.length*44+80,200);
+  document.getElementById('rankWrap').style.height = rh+'px';
+
+  if (chartRank) { chartRank.data.labels=rNames; chartRank.data.datasets[0].data=rGNC; chartRank.data.datasets[1].data=rAC; chartRank.update(); }
+  else chartRank = mkChart('cRank',{type:'bar',data:{labels:rNames,datasets:[{label:'m³ GNC',data:rGNC,backgroundColor:'#1e6fd4',hoverBackgroundColor:'#4a9eff',borderRadius:3,borderSkipped:false,xAxisID:'x1'},{label:'Lts aceite',data:rAC,backgroundColor:'#1a8060',hoverBackgroundColor:'#2fcb8d',borderRadius:3,borderSkipped:false,xAxisID:'x2'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex===0?' '+c.parsed.x.toLocaleString('es-AR')+' m³':' '+c.parsed.x.toFixed(1)+' L'}}},scales:{y:{ticks:{font:{size:12},color:'#c8cad4'},grid:{display:false}},x1:{position:'top',ticks:{font:{size:9},color:'#4a9eff',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(74,158,255,.08)'},title:{display:true,text:'m³ GNC',font:{size:9},color:'#4a9eff'}},x2:{position:'bottom',ticks:{font:{size:9},color:'#2fcb8d',callback:v=>v.toFixed(1)},grid:{display:false},title:{display:true,text:'Lts aceite',font:{size:9},color:'#2fcb8d'}}}}});
+
+  const TURNOS=['Mañana','Tarde','Noche'];
+  const tColors=['#4a9eff','#f5a623','#9b7fe8'];
+  const tData=TURNOS.map(t=>data.filter(r=>r.t===t).reduce((s,r)=>s+r.gnc,0));
+  const tTotal=tData.reduce((a,b)=>a+b,0);
+
+  if (chartTurno) { chartTurno.data.datasets[0].data=tData; chartTurno.update(); }
+  else chartTurno = mkChart('cTurno',{type:'doughnut',data:{labels:TURNOS,datasets:[{data:tData,backgroundColor:tColors,borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.label+': '+c.parsed.toLocaleString('es-AR')+' m³'}}}}});
+
+  document.getElementById('dleg').innerHTML = TURNOS.map((l,i)=>{
+    const pct=tTotal?Math.round(tData[i]/tTotal*100):0;
+    return `<div class="donut-legend-row"><span class="leg-sq" style="background:${tColors[i]}"></span><span style="color:#e8eaf0">${l}</span><span>${pct}% · ${tData[i].toLocaleString('es-AR')}</span></div>`;
+  }).join('');
+
+  const mesMap={};
+  data.forEach(r=>{ if(!mesMap[r.m])mesMap[r.m]=0; mesMap[r.m]+=r.gnc; });
+  const mKeys=Object.keys(mesMap);
+  const mData=mKeys.map(k=>mesMap[k]);
+  if (chartMes) { chartMes.data.labels=mKeys; chartMes.data.datasets[0].data=mData; chartMes.update(); }
+  else chartMes = mkChart('cMes',{type:'bar',data:{labels:mKeys,datasets:[{label:'m³',data:mData,backgroundColor:'#534ab7',hoverBackgroundColor:'#9b7fe8',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y.toLocaleString('es-AR')+' m³'}}},scales:{x:{ticks:{font:{size:10},color:'#7a7f92'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}}}}});
+}
+
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
