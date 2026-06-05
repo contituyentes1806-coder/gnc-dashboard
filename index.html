@@ -133,6 +133,12 @@ footer{margin-top:20px;text-align:center;font-size:11px;color:var(--muted)}
     </div>
   </div>
 
+  <!-- aviso día parcial -->
+  <div id="partial-banner" style="display:none;background:rgba(245,166,35,.1);border:0.5px solid rgba(245,166,35,.35);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:12px;color:#f5a623">
+    ⚠️ <strong>Día en curso (<span id="partial-date"></span>):</strong> datos parciales no incluidos en métricas ni proyección hasta que el día esté cerrado.
+    <div id="partial-detail" style="margin-top:5px;color:#c8a060;font-size:11px"></div>
+  </div>
+
   <!-- gráfico diario con proyección -->
   <div class="card">
     <div class="card-title">Ventas diarias m³ GNC — mes en curso <span class="badge badge-cyan">línea = proyección</span></div>
@@ -306,19 +312,50 @@ async function loadData(){
 }
 
 // ===== CURRENT MONTH =====
+function todayStr(){
+  const t=new Date();
+  return String(t.getDate()).padStart(2,'0')+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear();
+}
+
 function getCurrentMonthData(){
-  if(!ALL.length) return [];
-  // detect current month = latest month in data
+  if(!ALL.length) return {closed:[],partial:[],latestM:''};
   const sorted=[...ALL].sort((a,b)=>parseDate(b.f)-parseDate(a.f));
   const latestM=sorted[0].m;
   document.getElementById('footer-mes').textContent='Mes en curso: '+latestM;
   document.getElementById('tab-current').textContent='📅 '+latestM;
-  return ALL.filter(r=>r.m===latestM);
+  const monthAll=ALL.filter(r=>r.m===latestM);
+  const today=todayStr();
+  // closed = dates strictly before today
+  const closed=monthAll.filter(r=>parseDate(r.f)<parseDate(today));
+  // partial = rows whose date equals today
+  const partial=monthAll.filter(r=>r.f===today);
+  return {closed, partial, latestM};
 }
 
 function renderCurrent(){
-  const data=getCurrentMonthData();
-  if(!data.length) return;
+  const {closed, partial}=getCurrentMonthData();
+  if(!closed.length && !partial.length) return;
+
+  // ---- PARTIAL DAY BANNER ----
+  const banner=document.getElementById('partial-banner');
+  if(partial.length){
+    const partGNC=partial.reduce((s,r)=>s+r.gnc,0);
+    const partAC=Math.round(partial.reduce((s,r)=>s+r.ac,0)*10)/10;
+    const turnos=partial.map(r=>r.t).join(', ');
+    banner.style.display='block';
+    document.getElementById('partial-date').textContent=todayStr().slice(0,5);
+    document.getElementById('partial-detail').textContent=
+      'Turnos cargados: '+turnos+' · '+partGNC.toLocaleString('es-AR')+' m³ GNC · '+partAC+' L aceite (excluidos del análisis)';
+  } else {
+    banner.style.display='none';
+  }
+
+  // ---- USE ONLY CLOSED DAYS FOR METRICS & PROJECTION ----
+  const data=closed;
+  if(!data.length){ 
+    ['cur-gnc','cur-ac','cur-dias','cur-avg'].forEach(id=>document.getElementById(id).textContent='Sin días cerrados');
+    return;
+  }
 
   const totalGNC=data.reduce((s,r)=>s+r.gnc,0);
   const totalAC=Math.round(data.reduce((s,r)=>s+r.ac,0)*10)/10;
@@ -327,7 +364,8 @@ function renderCurrent(){
   const avg=dias?Math.round(totalGNC/dias):0;
 
   // days in month
-  const totalDias=daysInMonth(data[0].f);
+  const sampleF=data[0].f;
+  const totalDias=daysInMonth(sampleF);
   const pct=Math.round(dias/totalDias*100);
   const proyGNC=dias?Math.round(avg*totalDias):0;
   const proyAC=dias?Math.round((totalAC/dias)*totalDias*10)/10:0;
@@ -335,7 +373,7 @@ function renderCurrent(){
   document.getElementById('cur-gnc').textContent=totalGNC.toLocaleString('es-AR');
   document.getElementById('cur-gnc-proj').textContent='Proyección al cierre: '+proyGNC.toLocaleString('es-AR')+' m³';
   document.getElementById('cur-gnc-pct-l').textContent=pct+'% del mes';
-  document.getElementById('cur-gnc-days').textContent=dias+'/'+totalDias+' días';
+  document.getElementById('cur-gnc-days').textContent=dias+'/'+totalDias+' días cerrados';
   document.getElementById('cur-gnc-bar').style.width=pct+'%';
   document.getElementById('cur-ac').textContent=totalAC.toLocaleString('es-AR')+' L';
   document.getElementById('cur-ac-proj').textContent='Proyección al cierre: '+proyAC.toLocaleString('es-AR')+' L';
@@ -343,52 +381,63 @@ function renderCurrent(){
   document.getElementById('cur-dias-sub').textContent='de '+totalDias+' días del mes';
   document.getElementById('cur-avg').textContent=avg.toLocaleString('es-AR');
 
-  // daily chart with trend line
+  // daily chart — closed bars + partial bar dimmed + trend line
   const dailyMap={};
   data.forEach(r=>{ if(!dailyMap[r.f])dailyMap[r.f]=0; dailyMap[r.f]+=r.gnc; });
+  // add partial day separately
+  const partialMap={};
+  partial.forEach(r=>{ if(!partialMap[r.f])partialMap[r.f]=0; partialMap[r.f]+=r.gnc; });
+
+  const allDates=[...new Set([...Object.keys(dailyMap),...Object.keys(partialMap)])].sort((a,b)=>parseDate(a)-parseDate(b));
   const dKeys=Object.keys(dailyMap).sort((a,b)=>parseDate(a)-parseDate(b));
-  const dLabels=dKeys.map(d=>d.slice(0,5));
-  const dData=dKeys.map(d=>dailyMap[d]);
+  const dLabels=allDates.map(d=>d.slice(0,5));
+  const dData=allDates.map(d=>dailyMap[d]||null);
+  const dDataPartial=allDates.map(d=>partialMap[d]||null);
 
-  // linear regression for trend
-  const n=dData.length;
-  const xs=dData.map((_,i)=>i);
+  // linear regression on CLOSED days only
+  const closedVals=dKeys.map(d=>dailyMap[d]);
+  const n=closedVals.length;
+  const xs=closedVals.map((_,i)=>i);
   const xMean=xs.reduce((a,b)=>a+b,0)/n;
-  const yMean=dData.reduce((a,b)=>a+b,0)/n;
-  const slope=xs.reduce((s,x,i)=>s+(x-xMean)*(dData[i]-yMean),0)/xs.reduce((s,x)=>s+(x-xMean)**2,0);
+  const yMean=closedVals.reduce((a,b)=>a+b,0)/n;
+  const denom=xs.reduce((s,x)=>s+(x-xMean)**2,0);
+  const slope=denom?xs.reduce((s,x,i)=>s+(x-xMean)*(closedVals[i]-yMean),0)/denom:0;
   const intercept=yMean-slope*xMean;
-  const trendData=xs.map(x=>Math.max(0,Math.round(intercept+slope*x)));
 
-  // extend trend to end of month
-  const allLabels=[...dLabels];
-  const allBar=[...dData];
-  const allTrend=[...trendData];
-  const lastDate=parseDate(dKeys[dKeys.length-1]);
-  const [dd,mm,yy]=dKeys[dKeys.length-1].split('-').map(Number);
-  let dayIdx=n;
-  for(let d=lastDate.getDate()+1;d<=totalDias;d++){
-    const lbl=String(d).padStart(2,'0')+'-'+String(mm).padStart(2,'0');
-    allLabels.push(lbl);
-    allBar.push(null);
-    allTrend.push(Math.max(0,Math.round(intercept+slope*dayIdx)));
+  // build full label array: closed days + partial (if any) + future days to end of month
+  const extLabels=[...dLabels];
+  const extBar=[...dData];
+  const extPartial=[...dDataPartial];
+  const extTrend=allDates.map((_,i)=>Math.max(0,Math.round(intercept+slope*i)));
+  const [,mm2,yy2]=dKeys[dKeys.length-1].split('-').map(Number);
+  const lastClosedDay=parseDate(dKeys[dKeys.length-1]).getDate();
+  const startFrom=partial.length?parseDate(todayStr()).getDate()+1:lastClosedDay+1;
+  let dayIdx=allDates.length;
+  for(let d=startFrom;d<=totalDias;d++){
+    const lbl=String(d).padStart(2,'0')+'-'+String(mm2).padStart(2,'0');
+    extLabels.push(lbl);
+    extBar.push(null);
+    extPartial.push(null);
+    extTrend.push(Math.max(0,Math.round(intercept+slope*dayIdx)));
     dayIdx++;
   }
 
-  const chartCfg={type:'bar',data:{labels:allLabels,datasets:[
-    {label:'Real m³',data:allBar,backgroundColor:'#1e6fd4',hoverBackgroundColor:'#4a9eff',borderRadius:3,borderSkipped:false,order:2},
-    {label:'Tendencia',data:allTrend,type:'line',borderColor:'#22d3ee',borderWidth:2,pointRadius:0,fill:false,tension:.3,borderDash:[4,3],order:1}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y||0).toLocaleString('es-AR')+' m³'}}},scales:{x:{ticks:{font:{size:9},maxRotation:45,autoSkip:true,color:'#7a7f92'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{font:{size:10},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}}}}};
+  const chartCfg={type:'bar',data:{labels:extLabels,datasets:[
+    {label:'Real m³',data:extBar,backgroundColor:'#1e6fd4',hoverBackgroundColor:'#4a9eff',borderRadius:3,borderSkipped:false,order:2},
+    {label:'Parcial (hoy)',data:extPartial,backgroundColor:'rgba(245,166,35,.4)',hoverBackgroundColor:'rgba(245,166,35,.7)',borderRadius:3,borderSkipped:false,order:2},
+    {label:'Tendencia',data:extTrend,type:'line',borderColor:'#22d3ee',borderWidth:2,pointRadius:0,fill:false,tension:.3,borderDash:[4,3],order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a7f92',font:{size:10},boxWidth:10,filter:i=>i.text!=='Parcial (hoy)'||partial.length>0}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y||0).toLocaleString('es-AR')+' m³'}}},scales:{x:{ticks:{font:{size:9},maxRotation:45,autoSkip:true,color:'#7a7f92'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{font:{size:10},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}}}}};
 
   if(charts.curDia){charts.curDia.data=chartCfg.data;charts.curDia.update();}
   else charts.curDia=new Chart(document.getElementById('cCurDia'),chartCfg);
 
-  // ranking playeros with projection
+  // ranking playeros — closed days only, projection to end of month
   const byP={};
   data.forEach(r=>{ if(!byP[r.p]){byP[r.p]={gnc:0,ac:0};} byP[r.p].gnc+=r.gnc; byP[r.p].ac+=r.ac; });
   const sortedP=Object.entries(byP).sort((a,b)=>b[1].gnc-a[1].gnc);
   const pNames=sortedP.map(e=>e[0]);
   const pReal=sortedP.map(e=>e[1].gnc);
-  const pProj=sortedP.map(e=>dias?Math.round(e[1].gnc/dias*totalDias)-e[1].gnc:0);
+  const pProj=sortedP.map(e=>dias?Math.max(0,Math.round(e[1].gnc/dias*totalDias)-e[1].gnc):0);
   const pAC=sortedP.map(e=>Math.round(e[1].ac*10)/10);
   const rh=Math.max(pNames.length*50+80,200);
   document.getElementById('curRankWrap').style.height=rh+'px';
@@ -402,7 +451,7 @@ function renderCurrent(){
   if(charts.curRank){charts.curRank.data=rankCfg.data;charts.curRank.update();}
   else charts.curRank=new Chart(document.getElementById('cCurRank'),rankCfg);
 
-  // turno donut
+  // turno donut — closed days only
   const tData=TURNOS.map(t=>data.filter(r=>r.t===t||r.t.toLowerCase()===t.toLowerCase()).reduce((s,r)=>s+r.gnc,0));
   const tTotal=tData.reduce((a,b)=>a+b,0);
   if(charts.curTurno){charts.curTurno.data.datasets[0].data=tData;charts.curTurno.update();}
