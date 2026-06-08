@@ -235,7 +235,17 @@ footer{margin-top:20px;text-align:center;font-size:11px;color:var(--muted)}
 
 <script>
 const PROXY = 'https://script.google.com/macros/s/AKfycbybmBXSktVnanCMg6ddZRAiCtBR6aCZHahmLyX6QiuO_kibrqoFOINLvICMQWvtY2ZB/exec';
-const N = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
+const N = v => {
+  if (v === null || v === undefined || v === '') return 0;
+
+  return parseFloat(
+    String(v)
+      .replace(/\$/g, '')
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.')
+  ) || 0;
+};  
 const MONTH_NAMES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const TURNO_COLORS = ['#4a9eff','#f5a623','#9b7fe8'];
 const TURNOS = ['Mañana','Tarde','Noche'];
