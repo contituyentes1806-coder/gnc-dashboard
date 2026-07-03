@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Integral · Ventas</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#0f172a;
+    --card:#1e293b;
+    --card-border:#2b3a55;
+    --blue:#3b82f6;
+    --blue-glow:#60a5fa;
+    --orange:#f59e0b;
+    --orange-glow:#fb923c;
+    --text-primary:#f1f5f9;
+    --text-secondary:#94a3b8;
+  }
+  html,body{background:var(--bg);}
+  body{font-family:'Segoe UI',Inter,system-ui,-apple-system,sans-serif;color:var(--text-primary);}
+  .card{background:var(--card);border:1px solid var(--card-border);border-radius:14px;}
+  .metric-blue{color:var(--blue-glow);}
+  .metric-orange{color:var(--orange-glow);}
+  .live-dot{width:8px;height:8px;border-radius:9999px;background:#22c55e;box-shadow:0 0 0 rgba(34,197,94,.6);animation:pulse 2s infinite;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(34,197,94,.55);}
+    70%{box-shadow:0 0 0 8px rgba(34,197,94,0);}
+    100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}
+  }
+  .tab-btn{transition:all .15s ease;}
+  .tab-active{background:var(--blue);color:#fff;}
+  .tab-inactive{background:transparent;color:var(--text-secondary);}
+  .tab-inactive:hover{color:var(--text-primary);}
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:#334155;border-radius:8px;}
+  .fade-in{animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="max-w-[1400px] mx-auto px-4 md:px-6 py-6">
+
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center font-bold text-blue-400 text-sm">EE.SS</div>
+      <div>
+        <h1 class="text-xl font-bold leading-tight">Dashboard de Ventas Integral</h1>
+        <p class="text-xs text-slate-400" id="lastUpdatedLabel">Actualizado --:--</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 text-xs text-slate-300">
+        <span class="live-dot"></span> En vivo
+      </div>
+      <div class="text-xs text-slate-500 hidden sm:block">Próxima actualización en <span id="countdown" class="text-slate-300 font-medium">15:00</span></div>
+      <button id="refreshBtn" class="text-xs bg-slate-800 border border-slate-700 hover:border-blue-500 hover:text-blue-400 transition rounded-lg px-3 py-1.5">Actualizar ahora</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-2 mb-4">
+    <button id="moduloGncBtn" class="p-3 font-bold rounded-xl text-center border transition tab-active text-sm">
+      ⛽ CONTROL GNC
+    </button>
+    <button id="moduloLiquidosBtn" class="p-3 font-bold rounded-xl text-center border border-slate-700 text-slate-400 bg-slate-800/40 hover:text-white transition text-sm">
+      💧 CONTROL LÍQUIDOS Y SHOP
+    </button>
+  </div>
+
+  <div class="flex card p-1.5 mb-6 gap-1">
+    <button id="tabMesActual" class="tab-btn tab-active flex-1 md:flex-none text-sm font-medium rounded-lg px-5 py-2.5 flex items-center justify-center gap-2">
+      📅 <span id="mesActualLabel">Mes en curso</span>
+    </button>
+    <button id="tabHistorico" class="tab-btn tab-inactive flex-1 md:flex-none text-sm font-medium rounded-lg px-5 py-2.5 flex items-center justify-center gap-2">
+      🗂️ Histórico
+    </button>
+    <select id="historicoSelect" class="hidden ml-2 bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 text-slate-200"></select>
+  </div>
+
+  <div class="card p-4 mb-6" style="border-color:#f59e0b55;">
+    <div class="flex items-start gap-2 text-sm">
+      <span class="text-orange-400">⚠</span>
+      <div>
+        <p class="text-slate-200" id="alertMain">Cargando...</p>
+        <p class="text-xs text-slate-400 mt-1" id="alertSub"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainView" class="fade-in">
+
+    <div id="metricsGnc" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">M³ GNC Acumulados</p>
+        <p class="text-3xl font-extrabold metric-blue" id="cardM3Gnc">0</p>
+        <p class="text-[11px] text-slate-500 mt-1" id="cardM3GncSub">—</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">Días con Datos GNC</p>
+        <p class="text-3xl font-extrabold text-slate-200" id="cardDiasGnc">0</p>
+        <p class="text-[11px] text-slate-500 mt-1">Días cerrados del mes</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">Promedio Diario GNC</p>
+        <p class="text-3xl font-extrabold text-purple-400" id="cardPromedioGnc">0 <span class="text-lg">m³</span></p>
+        <p class="text-[11px] text-slate-500 mt-1">Media diaria real</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">Proyección al Cierre GNC</p>
+        <p class="text-3xl font-extrabold text-teal-400" id="cardProyeccionGnc">0 <span class="text-lg">m³</span></p>
+        <p class="text-[11px] text-slate-500 mt-1">Cálculo estimado a fin de mes</p>
+      </div>
+    </div>
+
+    <div id="metricsLiquidos" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 hidden">
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">Litros Combustible Acumulados</p>
+        <p class="text-3xl font-extrabold metric-blue" id="cardLtsLiquidos">0</p>
+        <p class="text-[11px] text-slate-500 mt-1" id="cardLtsLiquidosSub">—</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">Lts Aceite Acumulados</p>
+        <p class="text-3xl font-extrabold metric-blue"><span id="cardAceite">0</span> L</p>
+        <p class="text-[11px] text-slate-500 mt-1" id="cardAceiteSub">—</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">Ventas Heladera Acumuladas</p>
+        <p class="text-3xl font-extrabold metric-orange">$<span id="cardHeladera">0</span></p>
+        <p class="text-[11px] text-slate-500 mt-1" id="cardHeladeraSub">—</p>
+      </div>
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-medium mb-2">Ventas Varios Acumuladas</p>
+        <p class="text-3xl font-extrabold metric-orange">$<span id="cardVarios">0</span></p>
+        <p class="text-[11px] text-slate-500 mt-1" id="cardVariosSub">—</p>
+      </div>
+    </div>
+
+    <div class="card p-5 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-slate-200"><span id="trendTitleLabel">Ventas Diarias M³ GNC</span> — <span id="trendPeriodLabel">Mes en curso</span></h2>
+        <span class="text-[11px] bg-slate-800 border border-slate-700 rounded-full px-3 py-1 text-slate-400">Línea = Proyección</span>
+      </div>
+      <div class="h-72"><canvas id="trendChart"></canvas></div>
+    </div>
+
+    <div id="chartsSecundariosLiquidos" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-slate-200 mb-4">Ventas Heladera</h2>
+          <div class="h-56"><canvas id="heladeraChart"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-slate-200 mb-4">Ventas Lubricantes (Lts)</h2>
+          <div class="h-56"><canvas id="lubricantesChart"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-slate-200 mb-4">Ventas Varios</h2>
+          <div class="h-56"><canvas id="variosChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card p-5 mb-6">
+        <h2 class="text-sm font-semibold text-slate-200 mb-4">Ranking de Venta — Playeros Líquidos (Lts de combustible)</h2>
+        <div class="h-72"><canvas id="rankingChart"></canvas></div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="text-center text-[11px] text-slate-600 pb-4">Fuente unificada: Hoja 2 liq · Actualización automática cada 15 minutos</p>
+</div>
+
+<script>
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1Mi9g0qnBZRj70IdQl_6M1JxjMGRnyw1wOCh56D7cv64/gviz/tq?tqx=out:csv&sheet=Hoja%202%20liq";
+const REFRESH_MS = 15 * 60 * 1000; 
+
+const PLAYEROS_COLORS = ['#3b82f6','#f59e0b','#22c55e','#a855f7','#ef4444','#06b6d4'];
+const TODAY = new Date();
+
+let activeModule = 'GNC'; // 'GNC' o 'LIQUIDOS'
+let currentView = 'actual'; 
+let cachedRows = [];
+
+/* ============================================================
+   CARGA Y PARSEO DE DATOS
+   ============================================================ */
+async function refreshData(){
+  if(SHEET_CSV_URL){
+    try{
+      const url = SHEET_CSV_URL + '&cb=' + Date.now();
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const parsed = Papa.parse(text.trim(), { skipEmptyLines: true });
+      let data = parsed.data;
+      if(data.length && isNaN(parseRowDate(data[0]))) data = data.slice(1);
+      cachedRows = data;
+      updateLastLabel();
+      msLeft = REFRESH_MS;
+      draw();
+    }catch(err){
+      console.error('Error cargando CSV:', err);
+    }
+  }
+}
+
+function parseRowDate(row){
+  const raw = (row[0] || '').trim();
+  const parts = raw.split('/');
+  if(parts.length !== 3) {
+    const partsDash = raw.split('-');
+    if(partsDash.length === 3) return new Date(partsDash[2], partsDash[1]-1, partsDash[0]);
+    return NaN;
+  }
+  return new Date(parts.map(Number)[2], parts.map(Number)[1] - 1, parts.map(Number)[0]);
+}
+
+function num(v){
+  if(!v) return 0;
+  const n = parseFloat(String(v).replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function filterClosedDaysOfMonth(rows, year, month, excludeToday){
+  return rows.filter(r => {
+    const d = parseRowDate(r);
+    if(isNaN(d)) return false;
+    if(d.getFullYear() !== year || d.getMonth() !== month) return false;
+    if(excludeToday){
+      return !(d.getFullYear()===TODAY.getFullYear() && d.getMonth()===TODAY.getMonth() && d.getDate()===TODAY.getDate());
+    }
+    return true;
+  });
+}
+
+/* ============================================================
+   CÁLCULOS LOGICOS
+   ============================================================ */
+function computeGncMetrics(rows, daysInMonth){
+  let totalM3 = 0;
+  const datesSet = new Set();
+  rows.forEach(r => {
+    totalM3 += num(r[14]); // Columna O (M3 unificado)
+    if(num(r[14]) > 0) datesSet.add(r[0]);
+  });
+  const closedDays = datesSet.size || 1;
+  const promedio = totalM3 / closedDays;
+  const proyeccion = promedio * daysInMonth;
+  return { totalM3, closedDays, promedio, proyeccion };
+}
+
+function computeLiquidosMetrics(rows){
+  let lts = 0, aceite = 0, heladera = 0, varios = 0;
+  rows.forEach(r => {
+    heladera += num(r[4]);  // Columna E
+    varios   += num(r[5]);  // Columna F
+    aceite   += num(r[6]);  // Columna G
+    lts      += num(r[11]); // Columna L (Litros de Combustible)
+  });
+  return { lts, aceite, heladera, varios };
+}
+
+function computeRanking(rows){
+  const totals = {};
+  rows.forEach(r => {
+    const p1 = (r[2]||'').trim();
+    const p2 = (r[3]||'').trim();
+    const litros = num(r[11]);
+    if(!p1 && !p2) return;
+    if(p1 && p2){
+      totals[p1] = (totals[p1]||0) + litros/2;
+      totals[p2] = (totals[p2]||0) + litros/2;
+    } else if(p1){
+      totals[p1] = (totals[p1]||0) + litros;
+    } else if(p2){
+      totals[p2] = (totals[p2]||0) + litros;
+    }
+  });
+  return Object.entries(totals).sort((a,b) => b[1]-a[1]);
+}
+
+/* ============================================================
+   RENDER Y GRÁFICOS (CHART.JS)
+   ============================================================ */
+let charts = {};
+function destroyCharts(){ Object.values(charts).forEach(c => c && c.destroy()); charts = {}; }
+
+const chartDefaults = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:11} } } },
+  scales:{
+    x:{ ticks:{ color:'#64748b', font:{size:10} }, grid:{ color:'rgba(148,163,184,0.08)' } },
+    y:{ ticks:{ color:'#64748b', font:{size:10} }, grid:{ color:'rgba(148,163,184,0.08)' } }
+  }
+};
+
+function shortDate(d){ const p = d.split('/'); return p[0]+'/'+p[1]; }
+
+function draw(){
+  const targetMonth = currentView === 'actual' ? TODAY.getMonth() : parseInt(historicoSelect.value.split('-')[1]);
+  const targetYear = currentView === 'actual' ? TODAY.getFullYear() : parseInt(historicoSelect.value.split('-')[0]);
+  const excludeToday = currentView === 'actual';
+
+  const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const closedRows = filterClosedDaysOfMonth(cachedRows, targetYear, targetMonth, excludeToday);
+  
+  const periodLabel = currentView === 'actual' ? 
+    TODAY.toLocaleDateString('es-AR',{month:'long',year:'numeric'}) : 
+    historicoSelect.options[historicoSelect.selectedIndex].text;
+
+  document.getElementById('trendPeriodLabel').textContent = periodLabel;
+
+  // Render Alertas e Info del día actual
+  if(excludeToday){
+    const todayRows = cachedRows.filter(r => { const d = parseRowDate(r); return !isNaN(d) && d.toDateString() === TODAY.toDateString(); });
+    const activeTurnos = todayRows.map(r=>r[1]).join(' · ') || 'Ninguno';
+    document.getElementById('alertMain').textContent = `Día en curso (${TODAY.getDate()}/${TODAY.getMonth()+1}): Datos en desarrollo, excluidos de los acumulados de cierre.`;
+    document.getElementById('alertSub').textContent = `Turnos detectados hoy: ${activeTurnos}`;
+  } else {
+    document.getElementById('alertMain').textContent = `Histórico consolidado de: ${periodLabel}.`;
+    document.getElementById('alertSub').textContent = '';
+  }
+
+  destroyCharts();
+
+  // Agrupamiento diario para gráficos de tendencia
+  const byDate = {};
+  closedRows.forEach(r => {
+    byDate[r[0]] = (byDate[r[0]] || { gnc:0, lts:0, heladera:0, aceite:0, varios:0 });
+    byDate[r[0]].gnc += num(r[14]);
+    byDate[r[0]].lts += num(r[11]);
+    byDate[r[0]].heladera += num(r[4]);
+    byDate[r[0]].varios += num(r[5]);
+    byDate[r[0]].aceite += num(r[6]);
+  });
+  const dates = Object.keys(byDate).sort((a,b) => parseRowDate([a]) - parseRowDate([b]));
+
+  if(activeModule === 'GNC'){
+    // Vista GNC
+    document.getElementById('metricsGnc').classList.remove('hidden');
+    document.getElementById('metricsLiquidos').classList.add('hidden');
+    document.getElementById('chartsSecundariosLiquidos').classList.add('hidden');
+    document.getElementById('trendTitleLabel').textContent = "Ventas Diarias M³ GNC";
+
+    const gncM = computeGncMetrics(closedRows, daysInMonth);
+    document.getElementById('cardM3Gnc').textContent = gncM.totalM3.toLocaleString('es-AR', {maximumFractionDigits:2});
+    document.getElementById('cardDiasGnc').textContent = gncM.closedDays;
+    document.getElementById('cardPromedioGnc').textContent = Math.round(gncM.promedio).toLocaleString('es-AR');
+    document.getElementById('cardProyeccionGnc').textContent = Math.round(gncM.proyeccion).toLocaleString('es-AR');
+    document.getElementById('cardM3GncSub').textContent = `${gncM.closedDays} días con datos`;
+
+    // Gráfico de Tendencia GNC
+    const gncValues = dates.map(d => byDate[d].gnc);
+    const avgGnc = gncValues.length ? gncValues.reduce((a,b)=>a+b,0)/gncValues.length : 0;
+    charts.trend = new Chart(document.getElementById('trendChart'), {
+      type:'line',
+      data:{
+        labels: dates.map(shortDate),
+        datasets:[
+          { label:'Real m³ GNC', data: gncValues, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.15)', fill:true, tension:0.3 },
+          { label:'Tendencia', data: gncValues.map(()=>avgGnc), borderColor:'#f59e0b', borderDash:[5,5], pointRadius:0, borderWidth:2 }
+        ]
+      },
+      options: chartDefaults
+    });
+
+  } else {
+    // Vista Líquidos y Shop
+    document.getElementById('metricsGnc').classList.add('hidden');
+    document.getElementById('metricsLiquidos').classList.remove('hidden');
+    document.getElementById('chartsSecundariosLiquidos').classList.remove('hidden');
+    document.getElementById('trendTitleLabel').textContent = "Ventas Totales Combustibles Líquidos (Lts)";
+
+    const liqM = computeLiquidosMetrics(closedRows);
+    document.getElementById('cardLtsLiquidos').textContent = Math.round(liqM.lts).toLocaleString('es-AR') + ' Lts';
+    document.getElementById('cardAceite').textContent = liqM.aceite.toLocaleString('es-AR');
+    document.getElementById('cardHeladera').textContent = Math.round(liqM.heladera).toLocaleString('es-AR');
+    document.getElementById('cardVarios').textContent = Math.round(liqM.varios).toLocaleString('es-AR');
+    document.getElementById('cardLtsLiquidosSub').textContent = `${dates.length} días liquidados`;
+
+    // Gráfico Tendencia de Líquidos
+    const liqValues = dates.map(d => byDate[d].lts);
+    const avgLiq = liqValues.length ? liqValues.reduce((a,b)=>a+b,0)/liqValues.length : 0;
+    charts.trend = new Chart(document.getElementById('trendChart'), {
+      type:'line',
+      data:{
+        labels: dates.map(shortDate),
+        datasets:[
+          { label:'Litros Despachados', data: liqValues, borderColor:'#60a5fa', backgroundColor:'rgba(96,165,250,0.1)', fill:true, tension:0.2 },
+          { label:'Tendencia Lts', data: liqValues.map(()=>avgLiq), borderColor:'#fb923c', borderDash:[4,4], pointRadius:0 }
+        ]
+      },
+      options: chartDefaults
+    });
+
+    // Gráficos de Barras de Productos
+    renderBarChart('heladeraChart', dates, dates.map(d=>byDate[d].heladera), '#f59e0b');
+    renderBarChart('lubricantesChart', dates, dates.map(d=>byDate[d].aceite), '#3b82f6');
+    renderBarChart('variosChart', dates, dates.map(d=>byDate[d].varios), '#fb923c');
+
+    // Ranking Playeros Líquidos
+    const rankData = computeRanking(closedRows);
+    charts.ranking = new Chart(document.getElementById('rankingChart'), {
+      type:'bar',
+      data:{
+        labels: rankData.map(e=>e[0]),
+        datasets:[{ data: rankData.map(e=>Math.round(e[1])), backgroundColor: PLAYEROS_COLORS, borderRadius:5 }]
+      },
+      options:{ indexAxis:'y', ...chartDefaults, plugins:{ legend:{ display:false } } }
+    });
+  }
+}
+
+function renderBarChart(canvasId, labels, values, color){
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
+    type:'bar',
+    data:{ labels: labels.map(shortDate), datasets:[{ data: values, backgroundColor: color, borderRadius:4 }] },
+    options: { ...chartDefaults, plugins:{ legend:{ display:false } } }
+  });
+}
+
+/* ============================================================
+   CONTROLADORES DE INTERFAZ Y CONFIGURACIÓN INCALIENTE
+   ============================================================ */
+document.getElementById('moduloGncBtn').addEventListener('click', () => {
+  activeModule = 'GNC';
+  document.getElementById('moduloGncBtn').className = "p-3 font-bold rounded-xl text-center border transition tab-active text-sm";
+  document.getElementById('moduloLiquidosBtn').className = "p-3 font-bold rounded-xl text-center border border-slate-700 text-slate-400 bg-slate-800/40 hover:text-white transition text-sm";
+  draw();
+});
+
+document.getElementById('moduloLiquidosBtn').addEventListener('click', () => {
+  activeModule = 'LIQUIDOS';
+  document.getElementById('moduloLiquidosBtn').className = "p-3 font-bold rounded-xl text-center border transition tab-active text-sm";
+  document.getElementById('moduloGncBtn').className = "p-3 font-bold rounded-xl text-center border border-slate-700 text-slate-400 bg-slate-800/40 hover:text-white transition text-sm";
+  draw();
+});
+
+// Selector histórico dinámico adaptativo
+function buildHistoricoOptions(){
+  const select = document.getElementById('historicoSelect');
+  select.innerHTML = '';
+  // Genera dinámicamente opciones para los 3 meses anteriores
+  for(let i=1; i<=3; i++){
+    const d = new Date(TODAY.getFullYear(), TODAY.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${d.getMonth()}`;
+    const text = d.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+    const opt = document.createElement('option');
+    opt.value = value; opt.textContent = text.charAt(0).toUpperCase() + text.slice(1);
+    select.appendChild(opt);
+  }
+}
+
+document.getElementById('tabMesActual').addEventListener('click', () => {
+  currentView = 'actual';
+  document.getElementById('tabMesActual').className = 'tab-btn tab-active flex-1 md:flex-none text-sm font-medium rounded-lg px-5 py-2.5 flex items-center justify-center gap-2';
+  document.getElementById('tabHistorico').className = 'tab-btn tab-inactive flex-1 md:flex-none text-sm font-medium rounded-lg px-5 py-2.5 flex items-center justify-center gap-2';
+  document.getElementById('historicoSelect').classList.add('hidden');
+  draw();
+});
+
+document.getElementById('tabHistorico').addEventListener('click', () => {
+  currentView = 'historico';
+  document.getElementById('tabHistorico').className = 'tab-btn tab-active flex-1 md:flex-none text-sm font-medium rounded-lg px-5 py-2.5 flex items-center justify-center gap-2';
+  document.getElementById('tabMesActual').className = 'tab-btn tab-inactive flex-1 md:flex-none text-sm font-medium rounded-lg px-5 py-2.5 flex items-center justify-center gap-2';
+  document.getElementById('historicoSelect').classList.remove('hidden');
+  draw();
+});
+
+document.getElementById('historicoSelect').addEventListener('change', draw);
+document.getElementById('refreshBtn').addEventListener('click', refreshData);
+
+/* CONTADORES */
+let msLeft = REFRESH_MS;
+function pad(n){ return String(n).padStart(2,'0'); }
+function updateLastLabel(){
+  const now = new Date();
+  document.getElementById('lastUpdatedLabel').textContent = 'Actualizado ' + now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(() => {
+  msLeft -= 1000;
+  if(msLeft <= 0) { refreshData(); return; }
+  const sec = Math.floor(msLeft/1000);
+  document.getElementById('countdown').textContent = `${pad(Math.floor(sec/60))}:${pad(sec%60)}`;
+}, 1000);
+
+buildHistoricoOptions();
+refreshData();
+</script>
+</body>
+</html>
