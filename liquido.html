@@ -243,7 +243,7 @@ function computeGncMetrics(rows, daysInMonth){
   let totalM3 = 0;
   const datesSet = new Set();
   rows.forEach(r => {
-    totalM3 += num(r[14]); // Columna O (M3 unificado)
+    totalM3 += num(r[14]); // Columna O (M3 unificado / Litros totales segun pestaña)
     if(num(r[14]) > 0) datesSet.add(r[0]);
   });
   const closedDays = datesSet.size || 1;
@@ -258,7 +258,7 @@ function computeLiquidosMetrics(rows){
     heladera += num(r[4]);  // Columna E
     varios   += num(r[5]);  // Columna F
     aceite   += num(r[6]);  // Columna G
-    lts      += num(r[11]); // Columna L (Litros de Combustible)
+    lts      += num(r[14]); // 🌟 CORREGIDO: Mapeado a la Columna O (Venta Total Comb)
   });
   return { lts, aceite, heladera, varios };
 }
@@ -266,9 +266,9 @@ function computeLiquidosMetrics(rows){
 function computeRanking(rows){
   const totals = {};
   rows.forEach(r => {
-    const p1 = (r[2]||'').trim();
-    const p2 = (r[3]||'').trim();
-    const litros = num(r[11]);
+    const p1 = (r[2]||'').trim(); // Columna C
+    const p2 = (r[3]||'').trim(); // Columna D
+    const litros = num(r[14]);    // 🌟 CORREGIDO: Mapeado a la Columna O (Litros Reales)
     if(!p1 && !p2) return;
     if(p1 && p2){
       totals[p1] = (totals[p1]||0) + litros/2;
@@ -300,7 +300,6 @@ const chartDefaults = {
 function shortDate(d){ const p = d.split('/'); return p[0]+'/'+p[1]; }
 
 function draw(){
-  // Corrección de parseo del mes seleccionado para evitar descalces en el filtrado
   const targetMonth = currentView === 'actual' ? TODAY.getMonth() : parseInt(historicoSelect.value.split('-')[1]);
   const targetYear = currentView === 'actual' ? TODAY.getFullYear() : parseInt(historicoSelect.value.split('-')[0]);
   const excludeToday = currentView === 'actual';
@@ -332,7 +331,7 @@ function draw(){
   closedRows.forEach(r => {
     byDate[r[0]] = (byDate[r[0]] || { gnc:0, lts:0, heladera:0, aceite:0, varios:0 });
     byDate[r[0]].gnc += num(r[14]);
-    byDate[r[0]].lts += num(r[11]);
+    byDate[r[0]].lts += num(r[14]); // 🌟 CORREGIDO: Mapeado a la Columna O
     byDate[r[0]].heladera += num(r[4]);
     byDate[r[0]].varios += num(r[5]);
     byDate[r[0]].aceite += num(r[6]);
@@ -440,7 +439,7 @@ document.getElementById('moduloLiquidosBtn').addEventListener('click', () => {
   draw();
 });
 
-// Selector histórico dinámico adaptativo (Solución aplicada para evitar meses en blanco)
+// Selector histórico dinámico adaptativo
 function buildHistoricoOptions(){
   const select = document.getElementById('historicoSelect');
   select.innerHTML = '';
@@ -491,4 +490,4 @@ buildHistoricoOptions();
 refreshData();
 </script>
 </body>
-</html>  
+</html>
