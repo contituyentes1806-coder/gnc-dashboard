@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Integral de Ventas · Estación de Servicio</title>
+<title>Dashboard Gerencial · Control Operativo</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -13,12 +13,8 @@
     --card: #111827;
     --card-border: #1f2937;
     --blue: #3b82f6;
-    --blue-glow: #60a5fa;
-    --teal: #14b8a6;
-    --orange: #f59e0b;
-    --purple: #a855f7;
+    --orange: #ea580c;
     --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
   }
   html, body { background-color: var(--bg); color: var(--text-primary); font-family: system-ui, -apple-system, sans-serif; }
   .card { background-color: var(--card); border: 1px solid var(--card-border); border-radius: 12px; }
@@ -27,8 +23,8 @@
   
   .pill { background: #1f2937; color: #9ca3af; border: 1px solid #374151; transition: all 0.2s; cursor: pointer; font-size: 11px; font-weight: 500; }
   .pill:hover { border-color: #4b5563; color: #fff; }
-  .pill.active { background: #2563eb; color: #fff; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.3); }
-  .pill.active-orange { background: #ea580c; color: #fff; border-color: #f97316; box-shadow: 0 0 10px rgba(249,115,22,0.3); }
+  .pill.active-gnc { background: #2563eb; color: #fff; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.3); }
+  .pill.active-liq { background: #ea580c; color: #fff; border-color: #f97316; box-shadow: 0 0 10px rgba(249,115,22,0.3); }
   .pill.active-teal { background: #0d9488; color: #fff; border-color: #14b8a6; box-shadow: 0 0 10px rgba(20,184,166,0.3); }
 </style>
 </head>
@@ -38,14 +34,14 @@
 
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-gray-800 pb-5">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs">YPF</div>
+      <div id="brandBadge" class="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs transition-colors">YPF</div>
       <div>
         <h1 class="text-lg font-bold tracking-tight" id="lblMainHeading">Dashboard de ventas · GNC</h1>
-        <p class="text-xs text-gray-400" id="lblUpdated">Actualizado: Cargando...</p>
+        <p class="text-xs text-gray-400" id="lblUpdated">Sincronizando planilla maestra...</p>
       </div>
     </div>
     <div class="flex items-center gap-4 text-xs">
-      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> En vivo</div>
+      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> Modo Auditoría Activo</div>
       <button id="btnRefresh" class="bg-gray-800 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-md transition text-gray-200">Sincronizar Planilla</button>
     </div>
   </div>
@@ -60,56 +56,53 @@
   </div>
 
   <div class="card p-4 mb-6 space-y-3">
-    <div class="flex flex-wrap items-center gap-2">
-      <span class="text-xs font-semibold text-gray-400 w-16">MES:</span>
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+      <span class="text-xs font-semibold text-gray-400 w-24">PERÍODO / MES:</span>
       <div id="filterMonths" class="flex flex-wrap gap-1.5"></div>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-xs font-semibold text-gray-400 w-16">TURNO:</span>
+      <span class="text-xs font-semibold text-gray-400 w-24">TURNO:</span>
       <div id="filterTurns" class="flex flex-wrap gap-1.5">
-        <button class="pill px-3 py-1 rounded-full active" data-turn="Todos">Todos</button>
+        <button class="pill px-3 py-1 rounded-full active-gnc" data-turn="Todos">Todos</button>
         <button class="pill px-3 py-1 rounded-full" data-turn="MAÑANA">Mañana</button>
         <button class="pill px-3 py-1 rounded-full" data-turn="TARDE">Tarde</button>
         <button class="pill px-3 py-1 rounded-full" data-turn="NOCHE">Noche</button>
       </div>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-xs font-semibold text-gray-400 w-16">PLAYERO:</span>
+      <span class="text-xs font-semibold text-gray-400 w-24">PLAYERO:</span>
       <div id="filterWorkers" class="flex flex-wrap gap-1.5">
         <button class="pill px-3 py-1 rounded-full active-teal" data-worker="Todos">Todos</button>
       </div>
     </div>
   </div>
 
-  <div id="metricsGrid" class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-    </div>
+  <div id="metricsGrid" class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6"></div>
 
   <div class="card p-3 border-amber-500/20 bg-amber-500/5 mb-6 text-xs flex items-center gap-2 text-amber-400">
-    <span>⚠️</span>
-    <p id="lblAlert">Cargando estado operacional diario...</p>
+    <span>🛡️</span>
+    <p id="lblAlert">Validando consistencia de datos de planillas...</p>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
     <div class="card p-4 lg:col-span-2">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300" id="lblChartMainTitle">Evolución Diaria</h3>
-        <span class="text-[10px] bg-gray-800 text-blue-400 px-2 py-0.5 rounded-full" id="lblChartMainBadge">LÍNEA = TENDENCIA</span>
+        <span class="text-[10px] bg-gray-800 text-blue-400 px-2 py-0.5 rounded-full" id="lblChartMainBadge">LINEAL</span>
       </div>
       <div class="h-64"><canvas id="chartMain"></canvas></div>
     </div>
-    
     <div class="card p-4">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4">Distribución por Turno</h3>
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4">Distribución de Ventas por Turno</h3>
       <div class="h-64"><canvas id="chartTurns"></canvas></div>
     </div>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="card p-4 lg:col-span-2">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance / Ranking de Playeros</h3>
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance Prorrateada por Playero</h3>
       <div class="h-64"><canvas id="chartRanking"></canvas></div>
     </div>
-
     <div class="card p-4">
       <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblChartSecTitle">Ventas Complementarias</h3>
       <div class="h-64"><canvas id="chartSecondary"></canvas></div>
@@ -125,12 +118,12 @@ const URL_LIQ = BASE_URL + "&sheet=Hoja%202%20liq";
 
 let currentModule = 'GNC'; 
 let rawGncData = [], rawLiqData = [];
-let activeFilters = { month: 'Todos', turn: 'Todos', worker: 'Todos' };
+let activeFilters = { month: 'CURSO', turn: 'Todos', worker: 'Todos' };
 let charts = {};
+let currentMonthLabelGlobal = "";
 
 const COLORS = {
-  blue: '#3b82f6', blueGlow: '#60a5fa', teal: '#0d9488', tealGlow: '#14b8a6',
-  orange: '#ea580c', orangeGlow: '#f97316', purple: '#8b5cf6', gray: '#4b5563',
+  blue: '#3b82f6', blueGlow: '#60a5fa', orange: '#ea580c', orangeGlow: '#f97316', teal: '#0d9488',
   chartSet: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6']
 };
 
@@ -156,9 +149,9 @@ async function fetchData() {
     updateDashboard();
     
     const now = new Date();
-    document.getElementById('lblUpdated').textContent = `Actualizado: ${now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}`;
+    document.getElementById('lblUpdated').textContent = `Sincronizado: ${now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}`;
   } catch (err) {
-    console.error("Error cargando planillas:", err);
+    console.error("Error cargando datos:", err);
   }
 }
 
@@ -183,32 +176,87 @@ function num(v) {
   return isNaN(n) ? 0 : n;
 }
 
+// LÓGICA DE DÍA CERRADO: Retorna objeto con fechas que tienen Mañana, Tarde y Noche cargados
+function getClosedDaysMap(dataSrc) {
+  const dayTurns = {};
+  dataSrc.forEach(r => {
+    const f = r[0] ? r[0].trim() : '';
+    const t = r[1] ? r[1].toUpperCase().trim() : '';
+    if (f && (t==='MAÑANA' || t==='TARDE' || t==='NOCHE')) {
+      if (!dayTurns[f]) dayTurns[f] = new Set();
+      dayTurns[f].add(t);
+    }
+  });
+  const closedMap = {};
+  for (const date in dayTurns) {
+    closedMap[date] = dayTurns[date].has('MAÑANA') && dayTurns[date].has('TARDE') && dayTurns[date].has('NOCHE');
+  }
+  return closedMap;
+}
+
+// LÓGICA DE PRORRATEO OPERATIVO: Cuenta cuántos playeros hay por cada Fecha + Turno
+function getProrrateoMap(dataSrc, closedMap) {
+  const prorrateo = {};
+  dataSrc.forEach(r => {
+    const f = r[0] ? r[0].trim() : '';
+    if (!closedMap[f]) return; // Ignorar si no está cerrado el día
+    const t = r[1] ? r[1].toUpperCase().trim() : '';
+    const p = r[2] ? r[2].trim() : '';
+    if (f && t && p) {
+      const key = `${f}_${t}`;
+      if (!prorrateo[key]) prorrateo[key] = new Set();
+      prorrateo[key].add(p);
+    }
+  });
+  return prorrateo;
+}
+
 function buildMonthFilters() {
   const monthsDiv = document.getElementById('filterMonths');
   monthsDiv.innerHTML = '';
   
-  const uniqueMonths = new Set();
   const targetData = currentModule === 'GNC' ? rawGncData : rawLiqData;
+  const closedMap = getClosedDaysMap(targetData);
+  const uniqueMonths = new Set();
+  
+  let latestDate = null;
   
   targetData.forEach(r => {
     const d = parseRowDate(r[0]);
-    if (!isNaN(d)) {
-      let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
-      label = label.replace('.', '').trim();
-      uniqueMonths.add(label.charAt(0).toUpperCase() + label.slice(1));
+    if (!isNaN(d) && closedMap[r[0].trim()]) {
+      let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+      uniqueMonths.add(label);
+      if (!latestDate || d > latestDate) {
+        latestDate = d;
+      }
     }
   });
 
+  // Determinar la etiqueta del mes en curso real según planilla
+  if (latestDate) {
+    currentMonthLabelGlobal = latestDate.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+  }
+
+  // Píldora Mes en Curso
+  const btnCurso = document.createElement('button');
+  btnCurso.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'CURSO' ? (currentModule==='GNC'?'active-gnc':'active-liq') : ''}`;
+  btnCurso.textContent = `MES EN CURSO (${currentMonthLabelGlobal || 'ACTUAL'})`;
+  btnCurso.onclick = () => { selectFilter('month', 'CURSO'); };
+  monthsDiv.appendChild(btnCurso);
+
+  // Píldora Historial Completo (Todos)
   const btnAll = document.createElement('button');
-  btnAll.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'Todos' ? 'active' : ''}`;
-  btnAll.textContent = "Todos";
-  btnAll.onclick = () => { selectFilter('month', 'Todos'); };
+  btnAll.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'TODOS' ? (currentModule==='GNC'?'active-gnc':'active-liq') : ''}`;
+  btnAll.textContent = "HISTORIAL COMPLETO";
+  btnAll.onclick = () => { selectFilter('month', 'TODOS'); };
   monthsDiv.appendChild(btnAll);
 
-  Array.from(uniqueMonths).forEach(m => {
+  // Píldoras de Historial por Mes individual
+  Array.from(uniqueMonths).sort().forEach(m => {
     const btn = document.createElement('button');
-    btn.className = `pill px-3 py-1 rounded-full ${activeFilters.month.toUpperCase() === m.toUpperCase() ? 'active' : ''}`;
-    btn.textContent = m.toUpperCase();
+    const isSelected = activeFilters.month === m;
+    btn.className = `pill px-3 py-1 rounded-full ${isSelected ? (currentModule==='GNC'?'active-gnc':'active-liq') : ''}`;
+    btn.textContent = m;
     btn.onclick = () => { selectFilter('month', m); };
     monthsDiv.appendChild(btn);
   });
@@ -241,20 +289,14 @@ function buildWorkerFilters(filteredRows) {
 
 function selectFilter(type, value) {
   activeFilters[type] = value;
+  const activeClass = currentModule === 'GNC' ? 'active-gnc' : 'active-liq';
   
   if (type === 'month') {
-    document.querySelectorAll('#filterMonths .pill').forEach(b => {
-      b.classList.toggle('active', b.textContent.trim().toUpperCase() === value.toUpperCase());
-    });
+    buildMonthFilters(); // Reconstruye para refrescar estados visuales nativos
   }
   if (type === 'turn') {
     document.querySelectorAll('#filterTurns .pill').forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-turn').toUpperCase() === value.toUpperCase());
-    });
-  }
-  if (type === 'worker') {
-    document.querySelectorAll('#filterWorkers .pill').forEach(b => {
-      b.classList.toggle('active-teal', b.textContent.trim().toUpperCase() === value.toUpperCase());
+      b.classList.toggle(activeClass, b.getAttribute('data-turn') === value);
     });
   }
   updateDashboard();
@@ -264,47 +306,86 @@ function updateDashboard() {
   const isGnc = currentModule === 'GNC';
   const dataSrc = isGnc ? rawGncData : rawLiqData;
   
+  const closedMap = getClosedDaysMap(dataSrc);
+  const prorrateoMap = getProrrateoMap(dataSrc, closedMap);
+
+  // 1. Filtrado de Base por Tiempo y Regla de Día Cerrado
   let baseRows = dataSrc.filter(r => {
-    const d = parseRowDate(r[0]);
+    const f = r[0] ? r[0].trim() : '';
+    if (!closedMap[f]) return false; // REGLA ESTRICTA DE DÍA CERRADO
+    
+    const d = parseRowDate(f);
     if (isNaN(d)) return false;
     
-    if (activeFilters.month === 'Todos') return true;
+    if (activeFilters.month === 'TODOS') return true;
     
     let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+    if (activeFilters.month === 'CURSO') {
+      return label === currentMonthLabelGlobal;
+    }
     return label === activeFilters.month.toUpperCase();
   });
 
   buildWorkerFilters(baseRows);
 
+  // 2. Filtrado Secundario por parámetros de operación
   let displayRows = baseRows;
   if (activeFilters.turn !== 'Todos') {
     displayRows = displayRows.filter(r => r[1] && r[1].toUpperCase().trim() === activeFilters.turn.toUpperCase());
   }
-  if (activeFilters.worker !== 'Todos') {
-    displayRows = displayRows.filter(r => r[2] && r[2].trim() === activeFilters.worker);
-  }
 
-  document.getElementById('lblAlert').textContent = `Consolidado del período [${activeFilters.month.toUpperCase()}]. Módulo activo: ${currentModule}.`;
+  // Alerta Informativa Dinámica de Auditoría
+  const modoTexto = activeFilters.month === 'CURSO' ? `MES EN CURSO (${currentMonthLabelGlobal})` : (activeFilters.month === 'TODOS' ? 'HISTORIAL CONSOLIDADO' : `AUDITANDO PERÍODO ${activeFilters.month}`);
+  document.getElementById('lblAlert').textContent = `Filtro Activo: ${modoTexto} | Solo se computan datos de jornadas con Turno Noche cerrado.`;
 
   if (isGnc) {
-    renderGncDashboard(displayRows);
+    renderGncDashboard(displayRows, prorrateoMap);
   } else {
-    renderLiquidosDashboard(displayRows);
+    renderLiquidosDashboard(displayRows, prorrateoMap);
   }
 }
 
-function renderGncDashboard(displayRows) {
+function renderGncDashboard(displayRows, prorrateoMap) {
   let totalM3 = 0, totalEfectivo = 0, aceites = 0, varios = 0, extraGnc = 0;
   const uniqueDays = new Set();
-
+  
+  // Procesamos filas aplicando el prorrateo si se filtra por playero
   displayRows.forEach(r => {
-    totalM3 += num(r[3]);       // Columna D: Venta Total GNC
-    totalEfectivo += num(r[4]); // Columna E: Efectivo GNC
-    aceites += num(r[5]);       // Columna F: Aceites
-    varios += num(r[6]);        // Columna G: Varios
-    extraGnc += num(r[7]);      // Columna H: EXTRAGNC
-    if (num(r[3]) > 0) uniqueDays.add(r[0]);
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    const p = r[2].trim();
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+
+    if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
+
+    // Si filtramos por un playero, se le asigna solo su parte proporcional de la fila
+    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : 1;
+
+    totalM3 += num(r[3]) * factor;
+    totalEfectivo += num(r[4]) * factor;
+    aceites += num(r[5]) * factor; // CRÍTICO: División equitativa de aceites
+    varios += num(r[6]) * factor;
+    extraGnc += num(r[7]) * factor;
+    uniqueDays.add(f);
   });
+
+  // Si no se filtra playero, el total general real es la suma directa única de cada F+T para evitar duplicaciones
+  if (activeFilters.worker === 'Todos') {
+    totalM3 = 0; totalEfectivo = 0; aceites = 0; varios = 0; extraGnc = 0;
+    const yaSumado = new Set();
+    displayRows.forEach(r => {
+      const idUnicoFila = `${r[0]}_${r[1]}_${r[3]}_${r[4]}`;
+      if (!yaSumado.has(idUnicoFila)) {
+        yaSumado.add(idUnicoFila);
+        totalM3 += num(r[3]);
+        totalEfectivo += num(r[4]);
+        aceites += num(r[5]);
+        varios += num(r[6]);
+        extraGnc += num(r[7]);
+      }
+    });
+  }
 
   const cantDias = uniqueDays.size || 1;
   const promedio = totalM3 / cantDias;
@@ -312,114 +393,141 @@ function renderGncDashboard(displayRows) {
   const grid = document.getElementById('metricsGrid');
   grid.innerHTML = `
     <div class="card p-4 border-l-4 border-blue-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">M³ GNC ACUMULADOS</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">M³ GNC VENTAS</p>
       <p class="text-xl font-black text-blue-400 mt-1">${Math.round(totalM3).toLocaleString('es-AR')}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Volumen Total m³</p>
     </div>
     <div class="card p-4 border-l-4 border-emerald-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">EFECTIVO GNC</p>
       <p class="text-xl font-black text-emerald-400 mt-1">$ ${Math.round(totalEfectivo).toLocaleString('es-AR')}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Caja acumulada</p>
     </div>
     <div class="card p-4 border-l-4 border-teal-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LUBRICANTES GNC</p>
       <p class="text-xl font-black text-teal-400 mt-1">$ ${Math.round(aceites).toLocaleString('es-AR')}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Venta total aceites</p>
     </div>
     <div class="card p-4 border-l-4 border-purple-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VARIOS TIENDA</p>
       <p class="text-xl font-black text-purple-400 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Otros conceptos</p>
     </div>
     <div class="card p-4 border-l-4 border-amber-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">EXTRA GNC</p>
       <p class="text-xl font-black text-amber-500 mt-1">$ ${Math.round(extraGnc).toLocaleString('es-AR')}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Adicionales</p>
     </div>
     <div class="card p-4">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROMEDIO DIARIO</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. JORNADA</p>
       <p class="text-xl font-black text-gray-200 mt-1">${Math.round(promedio).toLocaleString('es-AR')} m³</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Media por jornada</p>
     </div>
   `;
 
-  document.getElementById('lblChartMainTitle').textContent = "Ventas Diarias M³ GNC — Histórico Diario";
-  document.getElementById('lblRankingTitle').textContent = "Ranking Playeros — Rendimiento M³ GNC";
+  document.getElementById('lblChartMainTitle').textContent = "Evolución Diaria Consolidada GNC (m³)";
+  document.getElementById('lblRankingTitle').textContent = "Ranking de Performance Despachada (m³ Prorrateados)";
   document.getElementById('lblChartSecTitle').textContent = "Recaudación Efectivo por Turno ($)";
 
+  // Gráfico lineal histórico agrupado por día
   const daysMap = {};
-  displayRows.forEach(r => { daysMap[r[0]] = (daysMap[r[0]] || 0) + num(r[3]); });
+  displayRows.forEach(r => {
+    const f = r[0].trim();
+    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
+    const key = `${f}_${r[1].toUpperCase().trim()}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
+    daysMap[f] = (daysMap[f] || 0) + (num(r[3]) * factor);
+  });
   const labelsDates = Object.keys(daysMap).sort();
   const valuesM3 = labelsDates.map(k => daysMap[k]);
 
-  renderMainLineChart(labelsDates, valuesM3, "M³ GNC", promedio);
-  renderTurnsChart(displayRows, 3); 
-  renderRankingChart(displayRows, 3); 
-  renderSecondaryBarChart(displayRows, 4, "Efectivo GNC $");
+  renderMainLineChart(labelsDates, valuesM3, "M³ GNC", promedio, COLORS.blueGlow);
+  renderTurnsChart(displayRows, 3, prorrateoMap); 
+  renderRankingChart(displayRows, 3, prorrateoMap); 
+  renderSecondaryBarChart(displayRows, 4, "Efectivo GNC $", prorrateoMap);
 }
 
-function renderLiquidosDashboard(displayRows) {
+function renderLiquidosDashboard(displayRows, prorrateoMap) {
   let totalLitros = 0, heladera = 0, varios = 0, aceite = 0;
   const uniqueDays = new Set();
 
   displayRows.forEach(r => {
-    heladera += num(r[4]);     // Columna E (Hoja 2)
-    varios += num(r[5]);       // Columna F (Hoja 2)
-    aceite += num(r[6]);       // Columna G (Hoja 2)
-    totalLitros += num(r[14]); // Columna O (Hoja 2)
-    if (num(r[14]) > 0) uniqueDays.add(r[0]);
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    const p = r[2].trim();
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+
+    if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
+    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : 1;
+
+    heladera += num(r[4]) * factor;
+    varios += num(r[5]) * factor;
+    aceite += num(r[6]) * factor; // Prorrateo de lubricantes líquidos
+    totalLitros += num(r[14]) * factor;
+    uniqueDays.add(f);
   });
+
+  if (activeFilters.worker === 'Todos') {
+    totalLitros = 0; heladera = 0; varios = 0; aceite = 0;
+    const yaSumado = new Set();
+    displayRows.forEach(r => {
+      const idUnicoFila = `${r[0]}_${r[1]}_${r[14]}`;
+      if (!yaSumado.has(idUnicoFila)) {
+        yaSumado.add(idUnicoFila);
+        heladera += num(r[4]);
+        varios += num(r[5]);
+        aceite += num(r[6]);
+        totalLitros += num(r[14]);
+      }
+    });
+  }
 
   const cantDias = uniqueDays.size || 1;
   const promedioLts = totalLitros / cantDias;
 
   const grid = document.getElementById('metricsGrid');
   grid.innerHTML = `
-    <div class="card p-4 border-l-4 border-blue-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LTS COMBUSTIBLE ACUMULADOS</p>
-      <p class="text-xl font-black text-blue-400 mt-1">${Math.round(totalLitros).toLocaleString('es-AR')} L</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Volumen Líquidos</p>
-    </div>
     <div class="card p-4 border-l-4 border-orange-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VENTAS HELADERA ACUMULADAS</p>
-      <p class="text-xl font-black text-orange-400 mt-1">$ ${Math.round(heladera).toLocaleString('es-AR')}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Tienda heladera</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LTS COMBUSTIBLE</p>
+      <p class="text-xl font-black text-orange-400 mt-1">${Math.round(totalLitros).toLocaleString('es-AR')} L</p>
     </div>
     <div class="card p-4 border-l-4 border-amber-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VENTAS VARIOS ACUMULADAS</p>
-      <p class="text-xl font-black text-amber-500 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Artículos varios</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">TIENDA HELADERA</p>
+      <p class="text-xl font-black text-amber-400 mt-1">$ ${Math.round(heladera).toLocaleString('es-AR')}</p>
+    </div>
+    <div class="card p-4 border-l-4 border-yellow-500">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VARIOS SHOP</p>
+      <p class="text-xl font-black text-yellow-400 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
     </div>
     <div class="card p-4 border-l-4 border-teal-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LTS ACEITE ACUMULADOS</p>
-      <p class="text-xl font-black text-teal-400 mt-1">${aceite} L</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Lubricantes Líquidos</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LUBRICANTES LIQ.</p>
+      <p class="text-xl font-black text-teal-400 mt-1">${Math.round(aceite).toLocaleString('es-AR')} L</p>
+    </div>
+    <div class="card p-4 border-l-4 border-gray-600">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">DÍAS CONSOLIDADO</p>
+      <p class="text-xl font-black text-gray-300 mt-1">${cantDias}</p>
     </div>
     <div class="card p-4">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">DÍAS LIQUIDADOS</p>
-      <p class="text-xl font-black text-gray-100 mt-1">${cantDias}</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Con registros reales</p>
-    </div>
-    <div class="card p-4">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROMEDIO DESPACHO</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. DESPACHO</p>
       <p class="text-xl font-black text-purple-400 mt-1">${Math.round(promedioLts).toLocaleString('es-AR')} L</p>
-      <p class="text-[9px] text-gray-500 mt-0.5">Media por jornada</p>
     </div>
   `;
 
-  document.getElementById('lblChartMainTitle').textContent = "Ventas Totales Combustibles Líquidos (Lts) — Histórico";
-  document.getElementById('lblRankingTitle').textContent = "Performance / Ranking Playeros — Líquidos (Lts)";
-  document.getElementById('lblChartSecTitle').textContent = "Ingresos de Tienda (Heladera $)";
+  document.getElementById('lblChartMainTitle').textContent = "Evolución Combustibles Líquidos (Litros)";
+  document.getElementById('lblRankingTitle').textContent = "Ranking de Despacho Líquidos (Litros Prorrateados)";
+  document.getElementById('lblChartSecTitle').textContent = "Ingresos del Shop (Heladera $)";
 
   const daysMap = {};
-  displayRows.forEach(r => { daysMap[r[0]] = (daysMap[r[0]] || 0) + num(r[14]); });
+  displayRows.forEach(r => {
+    const f = r[0].trim();
+    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
+    const key = `${f}_${r[1].toUpperCase().trim()}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
+    daysMap[f] = (daysMap[f] || 0) + (num(r[14]) * factor);
+  });
   const labelsDates = Object.keys(daysMap).sort();
   const valuesLts = labelsDates.map(k => daysMap[k]);
 
-  renderMainLineChart(labelsDates, valuesLts, "Litros Combustible", promedioLts);
-  renderTurnsChart(displayRows, 14); 
-  renderRankingChart(displayRows, 14); 
-  renderSecondaryBarChart(displayRows, 4, "Heladera $"); 
+  renderMainLineChart(labelsDates, valuesLts, "Litros Combustible", promedioLts, COLORS.orangeGlow);
+  renderTurnsChart(displayRows, 14, prorrateoMap); 
+  renderRankingChart(displayRows, 14, prorrateoMap); 
+  renderSecondaryBarChart(displayRows, 4, "Heladera $", prorrateoMap); 
 }
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); } }
@@ -428,12 +536,12 @@ const baseChartOptions = {
   responsive: true, maintainAspectRatio: false,
   plugins: { legend: { labels: { color: '#9ca3af', font: { size: 10 } } } },
   scales: {
-    x: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.02)' } },
+    x: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.01)' } },
     y: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.02)' } }
   }
 };
 
-function renderMainLineChart(labels, dataValues, datasetLabel, average) {
+function renderMainLineChart(labels, dataValues, datasetLabel, average, colorGlow) {
   destroyChart('main');
   const ctx = document.getElementById('chartMain').getContext('2d');
   charts.main = new Chart(ctx, {
@@ -441,20 +549,28 @@ function renderMainLineChart(labels, dataValues, datasetLabel, average) {
     data: {
       labels: labels.map(l => l.split('/')[0] + '/' + l.split('/')[1]),
       datasets: [
-        { label: datasetLabel, data: dataValues, borderColor: COLORS.blueGlow, backgroundColor: 'rgba(59,130,246,0.04)', fill: true, tension: 0.15, borderWidth: 2 },
-        { label: 'Tendencia Media', data: dataValues.map(() => average), borderColor: COLORS.orange, borderDash: [6, 6], pointRadius: 0, borderWidth: 1.5 }
+        { label: datasetLabel, data: dataValues, borderColor: colorGlow, backgroundColor: 'rgba(59,130,246,0.02)', fill: true, tension: 0.1, borderWidth: 2 },
+        { label: 'Media del Período', data: dataValues.map(() => average), borderColor: COLORS.orange, borderDash: [5, 5], pointRadius: 0, borderWidth: 1 }
       ]
     },
     options: baseChartOptions
   });
 }
 
-function renderTurnsChart(rows, dataColIdx) {
+function renderTurnsChart(rows, dataColIdx, prorrateoMap) {
   destroyChart('turns');
   const turnsMap = { 'MAÑANA': 0, 'TARDE': 0, 'NOCHE': 0 };
+  
   rows.forEach(r => {
-    const t = (r[1] || '').toUpperCase().trim();
-    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]);
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
+    
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
+
+    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) * factor;
   });
 
   const ctx = document.getElementById('chartTurns').getContext('2d');
@@ -464,21 +580,31 @@ function renderTurnsChart(rows, dataColIdx) {
       labels: Object.keys(turnsMap),
       datasets: [{
         data: Object.values(turnsMap),
-        backgroundColor: ['#2563eb', '#f59e0b', '#7c3aed'],
+        backgroundColor: ['#1d4ed8', '#ea580c', '#6d28d9'],
         borderWidth: 0
       }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 10 } } } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } } }
   });
 }
 
-function renderRankingChart(rows, dataColIdx) {
+function renderRankingChart(rows, dataColIdx, prorrateoMap) {
   destroyChart('ranking');
   const rank = {};
+  
   rows.forEach(r => {
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
     const p = (r[2] || '').trim();
     if (!p) return;
-    rank[p] = (rank[p] || 0) + num(r[dataColIdx]);
+    
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    // LÓGICA CLAVE: Cada fila se divide por los playeros que compartieron el bloque
+    const valorProrrateado = num(r[dataColIdx]) / numPlayerosEnTurno;
+
+    if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
+    rank[p] = (rank[p] || 0) + valorProrrateado;
   });
 
   const sorted = Object.entries(rank).sort((a, b) => b[1] - a[1]);
@@ -488,7 +614,7 @@ function renderRankingChart(rows, dataColIdx) {
     data: {
       labels: sorted.map(e => e[0]),
       datasets: [{
-        label: 'Despacho',
+        label: 'Volumen Asignado',
         data: sorted.map(e => Math.round(e[1])),
         backgroundColor: COLORS.chartSet,
         borderRadius: 4
@@ -498,12 +624,20 @@ function renderRankingChart(rows, dataColIdx) {
   });
 }
 
-function renderSecondaryBarChart(rows, dataColIdx, labelName) {
+function renderSecondaryBarChart(rows, dataColIdx, labelName, prorrateoMap) {
   destroyChart('secondary');
   const turnsMap = { 'MAÑANA': 0, 'TARDE': 0, 'NOCHE': 0 };
+  
   rows.forEach(r => {
-    const t = (r[1] || '').toUpperCase().trim();
-    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]);
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
+    
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
+
+    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) * factor;
   });
 
   const ctx = document.getElementById('chartSecondary').getContext('2d');
@@ -514,7 +648,7 @@ function renderSecondaryBarChart(rows, dataColIdx, labelName) {
       datasets: [{
         label: labelName,
         data: Object.values(turnsMap),
-        backgroundColor: ['#1e40af', '#d97706', '#6d28d9'],
+        backgroundColor: ['#2563eb', '#f59e0b', '#7c3aed'],
         borderRadius: 4
       }]
     },
@@ -523,13 +657,13 @@ function renderSecondaryBarChart(rows, dataColIdx, labelName) {
 }
 
 function resetTabFilters() {
-  activeFilters.month = 'Todos';
+  activeFilters.month = 'CURSO'; 
   activeFilters.turn = 'Todos';
   activeFilters.worker = 'Todos';
   
-  // Forzar que visualmente el botón de Turno vuelva a "Todos"
+  const activeClass = currentModule === 'GNC' ? 'active-gnc' : 'active-liq';
   document.querySelectorAll('#filterTurns .pill').forEach(b => {
-    b.classList.toggle('active', b.getAttribute('data-turn') === 'Todos');
+    b.className = `pill px-3 py-1 rounded-full ${b.getAttribute('data-turn') === 'Todos' ? activeClass : ''}`;
   });
 }
 
@@ -538,6 +672,7 @@ function setupEventListeners() {
     currentModule = 'GNC';
     resetTabFilters();
     document.getElementById('lblMainHeading').textContent = "Dashboard de ventas · GNC";
+    document.getElementById('brandBadge').className = "w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs";
     document.getElementById('btnModGnc').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/10";
     document.getElementById('btnModLiq').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-gray-800 border-gray-700 text-gray-400 hover:text-white";
     buildMonthFilters();
@@ -548,6 +683,7 @@ function setupEventListeners() {
     currentModule = 'LIQUIDOS';
     resetTabFilters();
     document.getElementById('lblMainHeading').textContent = "Dashboard de ventas · Líquidos y Shop";
+    document.getElementById('brandBadge').className = "w-10 h-10 rounded-lg bg-orange-600/10 border border-orange-500/30 flex items-center justify-center font-bold text-orange-400 text-xs";
     document.getElementById('btnModLiq').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-500/10";
     document.getElementById('btnModGnc').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-gray-800 border-gray-700 text-gray-400 hover:text-white";
     buildMonthFilters();
