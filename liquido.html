@@ -36,7 +36,6 @@
 
 <div class="max-w-[1500px] mx-auto">
 
-  <!-- ENCABEZADO -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-gray-800 pb-5">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs">YPF</div>
@@ -51,7 +50,6 @@
     </div>
   </div>
 
-  <!-- SELECTOR DE MÓDULO PRINCIPAL -->
   <div class="grid grid-cols-2 gap-2 mb-6">
     <button id="btnModGnc" class="py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/10">
       ⛽ CONTROL GNC
@@ -61,14 +59,11 @@
     </button>
   </div>
 
-  <!-- BARRA CENTRAL DE FILTROS INTERACTIVOS -->
   <div class="card p-4 mb-6 space-y-3">
-    <!-- Filtro Meses -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-16">MES:</span>
       <div id="filterMonths" class="flex flex-wrap gap-1.5"></div>
     </div>
-    <!-- Filtro Turnos -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-16">TURNO:</span>
       <div id="filterTurns" class="flex flex-wrap gap-1.5">
@@ -78,7 +73,6 @@
         <button class="pill px-3 py-1 rounded-full" data-turn="NOCHE">Noche</button>
       </div>
     </div>
-    <!-- Filtro Playeros -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-16">PLAYERO:</span>
       <div id="filterWorkers" class="flex flex-wrap gap-1.5">
@@ -87,20 +81,15 @@
     </div>
   </div>
 
-  <!-- SECCIÓN DINÁMICA DE TARJETAS MÉTRICAS -->
   <div id="metricsGrid" class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-    <!-- Dinámico por JS -->
-  </div>
+    </div>
 
-  <!-- ALERTA DE DÍA EN CURSO -->
   <div class="card p-3 border-amber-500/20 bg-amber-500/5 mb-6 text-xs flex items-center gap-2 text-amber-400">
     <span>⚠️</span>
     <p id="lblAlert">Cargando estado operacional diario...</p>
   </div>
 
-  <!-- GRÁFICOS PRINCIPALES -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    <!-- Gráfico de Tendencia Diario -->
     <div class="card p-4 lg:col-span-2">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300" id="lblChartMainTitle">Evolución Diaria</h3>
@@ -109,22 +98,18 @@
       <div class="h-64"><canvas id="chartMain"></canvas></div>
     </div>
     
-    <!-- Gráfico de Torta de Turnos -->
     <div class="card p-4">
       <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4">Distribución por Turno</h3>
       <div class="h-64"><canvas id="chartTurns"></canvas></div>
     </div>
   </div>
 
-  <!-- SEGUNDA FILA DE GRÁFICOS -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Ranking de Playeros -->
     <div class="card p-4 lg:col-span-2">
       <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance / Ranking de Playeros</h3>
       <div class="h-64"><canvas id="chartRanking"></canvas></div>
     </div>
 
-    <!-- Ventas Complementarias -->
     <div class="card p-4">
       <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblChartSecTitle">Ventas Complementarias</h3>
       <div class="h-64"><canvas id="chartSecondary"></canvas></div>
@@ -222,7 +207,7 @@ function buildMonthFilters() {
 
   Array.from(uniqueMonths).forEach(m => {
     const btn = document.createElement('button');
-    btn.className = `pill px-3 py-1 rounded-full ${activeFilters.month === m ? 'active' : ''}`;
+    btn.className = `pill px-3 py-1 rounded-full ${activeFilters.month.toUpperCase() === m.toUpperCase() ? 'active' : ''}`;
     btn.textContent = m.toUpperCase();
     btn.onclick = () => { selectFilter('month', m); };
     monthsDiv.appendChild(btn);
@@ -264,7 +249,12 @@ function selectFilter(type, value) {
   }
   if (type === 'turn') {
     document.querySelectorAll('#filterTurns .pill').forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-turn') === value);
+      b.classList.toggle('active', b.getAttribute('data-turn').toUpperCase() === value.toUpperCase());
+    });
+  }
+  if (type === 'worker') {
+    document.querySelectorAll('#filterWorkers .pill').forEach(b => {
+      b.classList.toggle('active-teal', b.textContent.trim().toUpperCase() === value.toUpperCase());
     });
   }
   updateDashboard();
@@ -532,12 +522,21 @@ function renderSecondaryBarChart(rows, dataColIdx, labelName) {
   });
 }
 
+function resetTabFilters() {
+  activeFilters.month = 'Todos';
+  activeFilters.turn = 'Todos';
+  activeFilters.worker = 'Todos';
+  
+  // Forzar que visualmente el botón de Turno vuelva a "Todos"
+  document.querySelectorAll('#filterTurns .pill').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-turn') === 'Todos');
+  });
+}
+
 function setupEventListeners() {
   document.getElementById('btnModGnc').addEventListener('click', () => {
     currentModule = 'GNC';
-    activeFilters.month = 'Todos';
-    activeFilters.turn = 'Todos';
-    activeFilters.worker = 'Todos';
+    resetTabFilters();
     document.getElementById('lblMainHeading').textContent = "Dashboard de ventas · GNC";
     document.getElementById('btnModGnc').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/10";
     document.getElementById('btnModLiq').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-gray-800 border-gray-700 text-gray-400 hover:text-white";
@@ -547,9 +546,7 @@ function setupEventListeners() {
 
   document.getElementById('btnModLiq').addEventListener('click', () => {
     currentModule = 'LIQUIDOS';
-    activeFilters.month = 'Todos';
-    activeFilters.turn = 'Todos';
-    activeFilters.worker = 'Todos';
+    resetTabFilters();
     document.getElementById('lblMainHeading').textContent = "Dashboard de ventas · Líquidos y Shop";
     document.getElementById('btnModLiq').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-500/10";
     document.getElementById('btnModGnc').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-gray-800 border-gray-700 text-gray-400 hover:text-white";
