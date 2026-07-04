@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Gerencial · Control Operativo</title>
+<title>Dashboard Gerencial · Control Shell Constituyentes</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root {
-    --bg: #0b0f19;
-    --card: #111827;
-    --card-border: #1f2937;
-    --blue: #3b82f6;
-    --orange: #ea580c;
+    --bg: #090d16;
+    --card: #111625;
+    --card-border: #1f2638;
+    --shell-red: #e51225;
+    --shell-yellow: #fecb00;
     --text-primary: #f3f4f6;
   }
   html, body { background-color: var(--bg); color: var(--text-primary); font-family: system-ui, -apple-system, sans-serif; }
@@ -21,10 +21,10 @@
   .live-dot { width: 8px; height: 8px; border-radius: 9999px; background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
   
-  .pill { background: #1f2937; color: #9ca3af; border: 1px solid #374151; transition: all 0.2s; cursor: pointer; font-size: 11px; font-weight: 500; }
+  .pill { background: #1a2333; color: #9ca3af; border: 1px solid #2d394f; transition: all 0.2s; cursor: pointer; font-size: 11px; font-weight: 600; }
   .pill:hover { border-color: #4b5563; color: #fff; }
-  .pill.active-gnc { background: #2563eb; color: #fff; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.3); }
-  .pill.active-liq { background: #ea580c; color: #fff; border-color: #f97316; box-shadow: 0 0 10px rgba(249,115,22,0.3); }
+  .pill.active-gnc { background: var(--shell-red); color: #fff; border-color: #ff3344; box-shadow: 0 0 10px rgba(229,18,37,0.4); }
+  .pill.active-liq { background: #d97706; color: #fff; border-color: #f59e0b; box-shadow: 0 0 10px rgba(217,119,6,0.4); }
   .pill.active-teal { background: #0d9488; color: #fff; border-color: #14b8a6; box-shadow: 0 0 10px rgba(20,184,166,0.3); }
 </style>
 </head>
@@ -32,22 +32,24 @@
 
 <div class="max-w-[1500px] mx-auto">
 
+  <!-- ENCABEZADO FORMATO SHELL -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-gray-800 pb-5">
     <div class="flex items-center gap-3">
-      <div id="brandBadge" class="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs transition-colors">YPF</div>
+      <div id="brandBadge" class="w-10 h-10 rounded-lg bg-[#e51225]/10 border border-[#e51225]/40 flex items-center justify-center font-black text-[#fecb00] text-sm tracking-tighter">SHELL</div>
       <div>
-        <h1 class="text-lg font-bold tracking-tight" id="lblMainHeading">Dashboard de ventas · GNC</h1>
-        <p class="text-xs text-gray-400" id="lblUpdated">Sincronizando planilla maestra...</p>
+        <h1 class="text-lg font-bold tracking-tight" id="lblMainHeading">Dashboard de Ventas · GNC</h1>
+        <p class="text-xs text-gray-400" id="lblUpdated">Leyendo datos operativos en tiempo real...</p>
       </div>
     </div>
     <div class="flex items-center gap-4 text-xs">
-      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> Modo Auditoría Activo</div>
+      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> Prorrateo de Turnos Activo</div>
       <button id="btnRefresh" class="bg-gray-800 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-md transition text-gray-200">Sincronizar Planilla</button>
     </div>
   </div>
 
+  <!-- SELECTOR DE MÓDULO PRINCIPAL -->
   <div class="grid grid-cols-2 gap-2 mb-6">
-    <button id="btnModGnc" class="py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/10">
+    <button id="btnModGnc" class="py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-[#e51225] border-[#ff3344] text-white shadow-lg shadow-red-500/10">
       ⛽ CONTROL GNC
     </button>
     <button id="btnModLiq" class="py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-gray-800 border-gray-700 text-gray-400 hover:text-white">
@@ -55,11 +57,14 @@
     </button>
   </div>
 
+  <!-- BARRA CENTRAL DE FILTROS INTERACTIVOS -->
   <div class="card p-4 mb-6 space-y-3">
+    <!-- Filtro Período / Historial (Desde Mayo 2026) -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-24">PERÍODO / MES:</span>
       <div id="filterMonths" class="flex flex-wrap gap-1.5"></div>
     </div>
+    <!-- Filtro Turnos -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-24">TURNO:</span>
       <div id="filterTurns" class="flex flex-wrap gap-1.5">
@@ -69,6 +74,7 @@
         <button class="pill px-3 py-1 rounded-full" data-turn="NOCHE">Noche</button>
       </div>
     </div>
+    <!-- Filtro Playeros -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-24">PLAYERO:</span>
       <div id="filterWorkers" class="flex flex-wrap gap-1.5">
@@ -77,27 +83,31 @@
     </div>
   </div>
 
+  <!-- SECCIÓN DINÁMICA DE TARJETAS MÉTRICAS -->
   <div id="metricsGrid" class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6"></div>
 
-  <div class="card p-3 border-amber-500/20 bg-amber-500/5 mb-6 text-xs flex items-center gap-2 text-amber-400">
+  <!-- ALERTA DE DÍA EN CURSO -->
+  <div class="card p-3 border-red-500/20 bg-red-500/5 mb-6 text-xs flex items-center gap-2 text-gray-300">
     <span>🛡️</span>
     <p id="lblAlert">Validando consistencia de datos de planillas...</p>
   </div>
 
+  <!-- GRÁFICOS PRINCIPALES -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
     <div class="card p-4 lg:col-span-2">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300" id="lblChartMainTitle">Evolución Diaria</h3>
-        <span class="text-[10px] bg-gray-800 text-blue-400 px-2 py-0.5 rounded-full" id="lblChartMainBadge">LINEAL</span>
+        <span class="text-[10px] bg-gray-800 text-yellow-400 px-2 py-0.5 rounded-full" id="lblChartMainBadge">AUDITADO</span>
       </div>
       <div class="h-64"><canvas id="chartMain"></canvas></div>
     </div>
     <div class="card p-4">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4">Distribución de Ventas por Turno</h3>
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4">Distribución por Turno</h3>
       <div class="h-64"><canvas id="chartTurns"></canvas></div>
     </div>
   </div>
 
+  <!-- SEGUNDA FILA DE GRÁFICOS -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="card p-4 lg:col-span-2">
       <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance Prorrateada por Playero</h3>
@@ -123,8 +133,8 @@ let charts = {};
 let currentMonthLabelGlobal = "";
 
 const COLORS = {
-  blue: '#3b82f6', blueGlow: '#60a5fa', orange: '#ea580c', orangeGlow: '#f97316', teal: '#0d9488',
-  chartSet: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6']
+  red: '#e51225', yellow: '#fecb00', orange: '#ea580c', teal: '#0d9488',
+  chartSet: ['#e51225', '#fecb00', '#10b981', '#8b5cf6', '#06b6d4', '#f59e0b', '#14b8a6']
 };
 
 async function init() {
@@ -142,32 +152,42 @@ async function fetchData() {
     rawGncData = Papa.parse(resGnc.trim(), { skipEmptyLines: true }).data;
     rawLiqData = Papa.parse(resLiq.trim(), { skipEmptyLines: true }).data;
 
-    if (rawGncData.length && isNaN(parseRowDate(rawGncData[0][0]))) rawGncData.shift();
-    if (rawLiqData.length && isNaN(parseRowDate(rawLiqData[0][0]))) rawLiqData.shift();
+    if (rawGncData.length && isNaN(parseRowDate(rawGncData[0][0]).getTime())) rawGncData.shift();
+    if (rawLiqData.length && isNaN(parseRowDate(rawLiqData[0][0]).getTime())) rawLiqData.shift();
 
     buildMonthFilters();
     updateDashboard();
     
     const now = new Date();
-    document.getElementById('lblUpdated').textContent = `Sincronizado: ${now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}`;
+    document.getElementById('lblUpdated').textContent = `Última sincronización: ${now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}`;
   } catch (err) {
-    console.error("Error cargando datos:", err);
+    console.error("Error crítico cargando datos:", err);
   }
 }
 
+// CORRECCIÓN CRÍTICA DE FECHAS PARA FORMATOS CON GUIONES O BARRAS INDISTINTAMENTE
 function parseRowDate(str) {
-  if (!str) return NaN;
-  const cleanStr = str.trim();
-  const p = cleanStr.split('/');
-  if (p.length === 3) {
-    const year = p[2].length === 2 ? parseInt('20' + p[2]) : parseInt(p[2]);
-    return new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
+  if (!str) return new Date(NaN);
+  const cleanStr = str.trim().replace(/["']/g, '');
+  const parts = cleanStr.split(/[\/\-]/); // Divide por / o por -
+  
+  if (parts.length === 3) {
+    let day, month, year;
+    // Si el primer bloque tiene 4 dígitos es YYYY-MM-DD
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      // Formato tradicional de planilla DD-MM-YYYY
+      day = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      year = parseInt(parts[2], 10);
+      if (year < 100) year += 2000;
+    }
+    return new Date(year, month, day);
   }
-  const d = cleanStr.split('-');
-  if (d.length === 3) {
-    return new Date(parseInt(d[0]), parseInt(d[1]) - 1, parseInt(d[2]));
-  }
-  return NaN;
+  return new Date(NaN);
 }
 
 function num(v) {
@@ -176,7 +196,6 @@ function num(v) {
   return isNaN(n) ? 0 : n;
 }
 
-// LÓGICA DE DÍA CERRADO: Retorna objeto con fechas que tienen Mañana, Tarde y Noche cargados
 function getClosedDaysMap(dataSrc) {
   const dayTurns = {};
   dataSrc.forEach(r => {
@@ -194,12 +213,12 @@ function getClosedDaysMap(dataSrc) {
   return closedMap;
 }
 
-// LÓGICA DE PRORRATEO OPERATIVO: Cuenta cuántos playeros hay por cada Fecha + Turno
+// PASO 7 - DETERMINACIÓN DE CANTIDAD DE PLAYEROS ÚNICOS POR FECHA Y TURNO
 function getProrrateoMap(dataSrc, closedMap) {
   const prorrateo = {};
   dataSrc.forEach(r => {
     const f = r[0] ? r[0].trim() : '';
-    if (!closedMap[f]) return; // Ignorar si no está cerrado el día
+    if (!closedMap[f]) return; 
     const t = r[1] ? r[1].toUpperCase().trim() : '';
     const p = r[2] ? r[2].trim() : '';
     if (f && t && p) {
@@ -223,7 +242,11 @@ function buildMonthFilters() {
   
   targetData.forEach(r => {
     const d = parseRowDate(r[0]);
-    if (!isNaN(d) && closedMap[r[0].trim()]) {
+    if (!isNaN(d.getTime()) && closedMap[r[0].trim()]) {
+      // LIMITACIÓN ESTRICTA: El histórico debe ser únicamente a partir de Mayo 2026 (Año >= 2026, Mes >= 4)
+      if (d.getFullYear() < 2026 || (d.getFullYear() === 2026 && d.getMonth() < 4)) {
+        return; 
+      }
       let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
       uniqueMonths.add(label);
       if (!latestDate || d > latestDate) {
@@ -232,30 +255,32 @@ function buildMonthFilters() {
     }
   });
 
-  // Determinar la etiqueta del mes en curso real según planilla
   if (latestDate) {
     currentMonthLabelGlobal = latestDate.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+  } else {
+    currentMonthLabelGlobal = "MAY 26"; 
   }
+
+  const activeClass = currentModule === 'GNC' ? 'active-gnc' : 'active-liq';
 
   // Píldora Mes en Curso
   const btnCurso = document.createElement('button');
-  btnCurso.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'CURSO' ? (currentModule==='GNC'?'active-gnc':'active-liq') : ''}`;
-  btnCurso.textContent = `MES EN CURSO (${currentMonthLabelGlobal || 'ACTUAL'})`;
+  btnCurso.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'CURSO' ? activeClass : ''}`;
+  btnCurso.textContent = `MES EN CURSO (${currentMonthLabelGlobal})`;
   btnCurso.onclick = () => { selectFilter('month', 'CURSO'); };
   monthsDiv.appendChild(btnCurso);
 
-  // Píldora Historial Completo (Todos)
+  // Píldora Historial Completo
   const btnAll = document.createElement('button');
-  btnAll.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'TODOS' ? (currentModule==='GNC'?'active-gnc':'active-liq') : ''}`;
-  btnAll.textContent = "HISTORIAL COMPLETO";
+  btnAll.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'TODOS' ? activeClass : ''}`;
+  btnAll.textContent = "HISTORIAL (DESDE MAYO 2026)";
   btnAll.onclick = () => { selectFilter('month', 'TODOS'); };
   monthsDiv.appendChild(btnAll);
 
-  // Píldoras de Historial por Mes individual
-  Array.from(uniqueMonths).sort().forEach(m => {
+  // Píldoras de meses individuales
+  Array.from(uniqueMonths).sort((a,b) => b.localeCompare(a)).forEach(m => {
     const btn = document.createElement('button');
-    const isSelected = activeFilters.month === m;
-    btn.className = `pill px-3 py-1 rounded-full ${isSelected ? (currentModule==='GNC'?'active-gnc':'active-liq') : ''}`;
+    btn.className = `pill px-3 py-1 rounded-full ${activeFilters.month === m ? activeClass : ''}`;
     btn.textContent = m;
     btn.onclick = () => { selectFilter('month', m); };
     monthsDiv.appendChild(btn);
@@ -292,7 +317,7 @@ function selectFilter(type, value) {
   const activeClass = currentModule === 'GNC' ? 'active-gnc' : 'active-liq';
   
   if (type === 'month') {
-    buildMonthFilters(); // Reconstruye para refrescar estados visuales nativos
+    buildMonthFilters();
   }
   if (type === 'turn') {
     document.querySelectorAll('#filterTurns .pill').forEach(b => {
@@ -309,13 +334,15 @@ function updateDashboard() {
   const closedMap = getClosedDaysMap(dataSrc);
   const prorrateoMap = getProrrateoMap(dataSrc, closedMap);
 
-  // 1. Filtrado de Base por Tiempo y Regla de Día Cerrado
   let baseRows = dataSrc.filter(r => {
     const f = r[0] ? r[0].trim() : '';
-    if (!closedMap[f]) return false; // REGLA ESTRICTA DE DÍA CERRADO
+    if (!closedMap[f]) return false; 
     
     const d = parseRowDate(f);
-    if (isNaN(d)) return false;
+    if (isNaN(d.getTime())) return false;
+    
+    // Filtro de resguardo temporal estricto Mayo 2026
+    if (d.getFullYear() < 2026 || (d.getFullYear() === 2026 && d.getMonth() < 4)) return false;
     
     if (activeFilters.month === 'TODOS') return true;
     
@@ -328,15 +355,13 @@ function updateDashboard() {
 
   buildWorkerFilters(baseRows);
 
-  // 2. Filtrado Secundario por parámetros de operación
   let displayRows = baseRows;
   if (activeFilters.turn !== 'Todos') {
     displayRows = displayRows.filter(r => r[1] && r[1].toUpperCase().trim() === activeFilters.turn.toUpperCase());
   }
 
-  // Alerta Informativa Dinámica de Auditoría
-  const modoTexto = activeFilters.month === 'CURSO' ? `MES EN CURSO (${currentMonthLabelGlobal})` : (activeFilters.month === 'TODOS' ? 'HISTORIAL CONSOLIDADO' : `AUDITANDO PERÍODO ${activeFilters.month}`);
-  document.getElementById('lblAlert').textContent = `Filtro Activo: ${modoTexto} | Solo se computan datos de jornadas con Turno Noche cerrado.`;
+  const modoTexto = activeFilters.month === 'CURSO' ? `MES EN CURSO (${currentMonthLabelGlobal})` : (activeFilters.month === 'TODOS' ? 'HISTORIAL CONSOLIDADO (POST MAYO 2026)' : `AUDITANDO PERÍODO ${activeFilters.month}`);
+  document.getElementById('lblAlert').textContent = `Filtro de Auditoría Shell: ${modoTexto} | Prorrateo equitativo aplicado por turno simultáneo.`;
 
   if (isGnc) {
     renderGncDashboard(displayRows, prorrateoMap);
@@ -349,7 +374,7 @@ function renderGncDashboard(displayRows, prorrateoMap) {
   let totalM3 = 0, totalEfectivo = 0, aceites = 0, varios = 0, extraGnc = 0;
   const uniqueDays = new Set();
   
-  // Procesamos filas aplicando el prorrateo si se filtra por playero
+  // PASO 7 IMPACTADO: Cálculo con prorrateo exacto por fila según asignación
   displayRows.forEach(r => {
     const f = r[0].trim();
     const t = r[1].toUpperCase().trim();
@@ -359,30 +384,35 @@ function renderGncDashboard(displayRows, prorrateoMap) {
 
     if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
 
-    // Si filtramos por un playero, se le asigna solo su parte proporcional de la fila
+    // Si hay 2 playeros en el turno, a cada uno le corresponde el 50% de la fila
     const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : 1;
 
-    totalM3 += num(r[3]) * factor;
-    totalEfectivo += num(r[4]) * factor;
-    aceites += num(r[5]) * factor; // CRÍTICO: División equitativa de aceites
-    varios += num(r[6]) * factor;
-    extraGnc += num(r[7]) * factor;
+    if (activeFilters.worker !== 'Todos') {
+      totalM3 += num(r[3]) * factor;
+      totalEfectivo += num(r[4]) * factor;
+      aceites += num(r[5]) * factor; // Ventas de aceites dividida entre ambos
+      varios += num(r[6]) * factor;
+      extraGnc += num(r[7]) * factor;
+    }
     uniqueDays.add(f);
   });
 
-  // Si no se filtra playero, el total general real es la suma directa única de cada F+T para evitar duplicaciones
+  // Si no hay filtro individual seleccionado, calculamos el volumen consolidado real sin duplicar
   if (activeFilters.worker === 'Todos') {
     totalM3 = 0; totalEfectivo = 0; aceites = 0; varios = 0; extraGnc = 0;
     const yaSumado = new Set();
     displayRows.forEach(r => {
-      const idUnicoFila = `${r[0]}_${r[1]}_${r[3]}_${r[4]}`;
+      const idUnicoFila = `${r[0]}_${r[1]}_${r[2]}_${r[3]}`;
+      const key = `${r[0].trim()}_${r[1].toUpperCase().trim()}`;
+      const divisor = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+
       if (!yaSumado.has(idUnicoFila)) {
         yaSumado.add(idUnicoFila);
-        totalM3 += num(r[3]);
-        totalEfectivo += num(r[4]);
-        aceites += num(r[5]);
-        varios += num(r[6]);
-        extraGnc += num(r[7]);
+        totalM3 += num(r[3]) / divisor;
+        totalEfectivo += num(r[4]) / divisor;
+        aceites += num(r[5]) / divisor; // Distribución equitativa acumulada
+        varios += num(r[6]) / divisor;
+        extraGnc += num(r[7]) / divisor;
       }
     });
   }
@@ -392,50 +422,50 @@ function renderGncDashboard(displayRows, prorrateoMap) {
 
   const grid = document.getElementById('metricsGrid');
   grid.innerHTML = `
-    <div class="card p-4 border-l-4 border-blue-500">
+    <div class="card p-4 border-l-4 border-red-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">M³ GNC VENTAS</p>
-      <p class="text-xl font-black text-blue-400 mt-1">${Math.round(totalM3).toLocaleString('es-AR')}</p>
+      <p class="text-xl font-black text-red-500 mt-1">${Math.round(totalM3).toLocaleString('es-AR')}</p>
     </div>
     <div class="card p-4 border-l-4 border-emerald-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">EFECTIVO GNC</p>
       <p class="text-xl font-black text-emerald-400 mt-1">$ ${Math.round(totalEfectivo).toLocaleString('es-AR')}</p>
     </div>
-    <div class="card p-4 border-l-4 border-teal-500">
+    <div class="card p-4 border-l-4 border-yellow-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LUBRICANTES GNC</p>
-      <p class="text-xl font-black text-teal-400 mt-1">$ ${Math.round(aceites).toLocaleString('es-AR')}</p>
+      <p class="text-xl font-black text-yellow-500 mt-1">$ ${Math.round(aceites).toLocaleString('es-AR')}</p>
     </div>
     <div class="card p-4 border-l-4 border-purple-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VARIOS TIENDA</p>
       <p class="text-xl font-black text-purple-400 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
     </div>
-    <div class="card p-4 border-l-4 border-amber-500">
+    <div class="card p-4 border-l-4 border-blue-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">EXTRA GNC</p>
-      <p class="text-xl font-black text-amber-500 mt-1">$ ${Math.round(extraGnc).toLocaleString('es-AR')}</p>
+      <p class="text-xl font-black text-blue-400 mt-1">$ ${Math.round(extraGnc).toLocaleString('es-AR')}</p>
     </div>
     <div class="card p-4">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. JORNADA</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. DIARIO</p>
       <p class="text-xl font-black text-gray-200 mt-1">${Math.round(promedio).toLocaleString('es-AR')} m³</p>
     </div>
   `;
 
   document.getElementById('lblChartMainTitle').textContent = "Evolución Diaria Consolidada GNC (m³)";
-  document.getElementById('lblRankingTitle').textContent = "Ranking de Performance Despachada (m³ Prorrateados)";
+  document.getElementById('lblRankingTitle').textContent = "Ranking Prorrateado por Turnos Compartidos (m³)";
   document.getElementById('lblChartSecTitle').textContent = "Recaudación Efectivo por Turno ($)";
 
-  // Gráfico lineal histórico agrupado por día
   const daysMap = {};
   displayRows.forEach(r => {
     const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
     if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
-    const key = `${f}_${r[1].toUpperCase().trim()}`;
+    
+    const key = `${f}_${t}`;
     const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
-    daysMap[f] = (daysMap[f] || 0) + (num(r[3]) * factor);
+    daysMap[f] = (daysMap[f] || 0) + (num(r[3]) / numPlayerosEnTurno);
   });
   const labelsDates = Object.keys(daysMap).sort();
   const valuesM3 = labelsDates.map(k => daysMap[k]);
 
-  renderMainLineChart(labelsDates, valuesM3, "M³ GNC", promedio, COLORS.blueGlow);
+  renderMainLineChart(labelsDates, valuesM3, "M³ GNC", promedio, COLORS.red);
   renderTurnsChart(displayRows, 3, prorrateoMap); 
   renderRankingChart(displayRows, 3, prorrateoMap); 
   renderSecondaryBarChart(displayRows, 4, "Efectivo GNC $", prorrateoMap);
@@ -455,10 +485,12 @@ function renderLiquidosDashboard(displayRows, prorrateoMap) {
     if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
     const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : 1;
 
-    heladera += num(r[4]) * factor;
-    varios += num(r[5]) * factor;
-    aceite += num(r[6]) * factor; // Prorrateo de lubricantes líquidos
-    totalLitros += num(r[14]) * factor;
+    if (activeFilters.worker !== 'Todos') {
+      heladera += num(r[4]) * factor;
+      varios += num(r[5]) * factor;
+      aceite += num(r[6]) * factor; 
+      totalLitros += num(r[14]) * factor;
+    }
     uniqueDays.add(f);
   });
 
@@ -466,13 +498,16 @@ function renderLiquidosDashboard(displayRows, prorrateoMap) {
     totalLitros = 0; heladera = 0; varios = 0; aceite = 0;
     const yaSumado = new Set();
     displayRows.forEach(r => {
-      const idUnicoFila = `${r[0]}_${r[1]}_${r[14]}`;
+      const idUnicoFila = `${r[0]}_${r[1]}_${r[2]}_${r[14]}`;
+      const key = `${r[0].trim()}_${r[1].toUpperCase().trim()}`;
+      const divisor = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+
       if (!yaSumado.has(idUnicoFila)) {
         yaSumado.add(idUnicoFila);
-        heladera += num(r[4]);
-        varios += num(r[5]);
-        aceite += num(r[6]);
-        totalLitros += num(r[14]);
+        heladera += num(r[4]) / divisor;
+        varios += num(r[5]) / divisor;
+        aceite += num(r[6]) / divisor; // Distribución equitativa de aceites líquidos
+        totalLitros += num(r[14]) / divisor;
       }
     });
   }
@@ -482,49 +517,50 @@ function renderLiquidosDashboard(displayRows, prorrateoMap) {
 
   const grid = document.getElementById('metricsGrid');
   grid.innerHTML = `
-    <div class="card p-4 border-l-4 border-orange-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LTS COMBUSTIBLE</p>
-      <p class="text-xl font-black text-orange-400 mt-1">${Math.round(totalLitros).toLocaleString('es-AR')} L</p>
-    </div>
     <div class="card p-4 border-l-4 border-amber-500">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LTS COMBUSTIBLE</p>
+      <p class="text-xl font-black text-amber-500 mt-1">${Math.round(totalLitros).toLocaleString('es-AR')} L</p>
+    </div>
+    <div class="card p-4 border-l-4 border-red-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">TIENDA HELADERA</p>
-      <p class="text-xl font-black text-amber-400 mt-1">$ ${Math.round(heladera).toLocaleString('es-AR')}</p>
+      <p class="text-xl font-black text-red-500 mt-1">$ ${Math.round(heladera).toLocaleString('es-AR')}</p>
     </div>
     <div class="card p-4 border-l-4 border-yellow-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VARIOS SHOP</p>
-      <p class="text-xl font-black text-yellow-400 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
+      <p class="text-xl font-black text-yellow-500 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
     </div>
     <div class="card p-4 border-l-4 border-teal-500">
       <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LUBRICANTES LIQ.</p>
       <p class="text-xl font-black text-teal-400 mt-1">${Math.round(aceite).toLocaleString('es-AR')} L</p>
     </div>
     <div class="card p-4 border-l-4 border-gray-600">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">DÍAS CONSOLIDADO</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">DÍAS LIQUIDADOS</p>
       <p class="text-xl font-black text-gray-300 mt-1">${cantDias}</p>
     </div>
     <div class="card p-4">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. DESPACHO</p>
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. JORNADA</p>
       <p class="text-xl font-black text-purple-400 mt-1">${Math.round(promedioLts).toLocaleString('es-AR')} L</p>
     </div>
   `;
 
   document.getElementById('lblChartMainTitle').textContent = "Evolución Combustibles Líquidos (Litros)";
-  document.getElementById('lblRankingTitle').textContent = "Ranking de Despacho Líquidos (Litros Prorrateados)";
+  document.getElementById('lblRankingTitle').textContent = "Despacho Equitativo por Playero (Litros)";
   document.getElementById('lblChartSecTitle').textContent = "Ingresos del Shop (Heladera $)";
 
   const daysMap = {};
   displayRows.forEach(r => {
     const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
     if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
-    const key = `${f}_${r[1].toUpperCase().trim()}`;
+    
+    const key = `${f}_${t}`;
     const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
-    daysMap[f] = (daysMap[f] || 0) + (num(r[14]) * factor);
+    daysMap[f] = (daysMap[f] || 0) + (num(r[14]) / numPlayerosEnTurno);
   });
   const labelsDates = Object.keys(daysMap).sort();
   const valuesLts = labelsDates.map(k => daysMap[k]);
 
-  renderMainLineChart(labelsDates, valuesLts, "Litros Combustible", promedioLts, COLORS.orangeGlow);
+  renderMainLineChart(labelsDates, valuesLts, "Litros Combustible", promedioLts, '#f59e0b');
   renderTurnsChart(displayRows, 14, prorrateoMap); 
   renderRankingChart(displayRows, 14, prorrateoMap); 
   renderSecondaryBarChart(displayRows, 4, "Heladera $", prorrateoMap); 
@@ -547,10 +583,10 @@ function renderMainLineChart(labels, dataValues, datasetLabel, average, colorGlo
   charts.main = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: labels.map(l => l.split('/')[0] + '/' + l.split('/')[1]),
+      labels: labels,
       datasets: [
-        { label: datasetLabel, data: dataValues, borderColor: colorGlow, backgroundColor: 'rgba(59,130,246,0.02)', fill: true, tension: 0.1, borderWidth: 2 },
-        { label: 'Media del Período', data: dataValues.map(() => average), borderColor: COLORS.orange, borderDash: [5, 5], pointRadius: 0, borderWidth: 1 }
+        { label: datasetLabel, data: dataValues, borderColor: colorGlow, backgroundColor: 'rgba(229,18,37,0.02)', fill: true, tension: 0.1, borderWidth: 2 },
+        { label: 'Media Período', data: dataValues.map(() => average), borderColor: '#fecb00', borderDash: [4, 4], pointRadius: 0, borderWidth: 1 }
       ]
     },
     options: baseChartOptions
@@ -568,9 +604,8 @@ function renderTurnsChart(rows, dataColIdx, prorrateoMap) {
     
     const key = `${f}_${t}`;
     const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
 
-    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) * factor;
+    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) / numPlayerosEnTurno;
   });
 
   const ctx = document.getElementById('chartTurns').getContext('2d');
@@ -580,7 +615,7 @@ function renderTurnsChart(rows, dataColIdx, prorrateoMap) {
       labels: Object.keys(turnsMap),
       datasets: [{
         data: Object.values(turnsMap),
-        backgroundColor: ['#1d4ed8', '#ea580c', '#6d28d9'],
+        backgroundColor: ['#e51225', '#fecb00', '#4b5563'],
         borderWidth: 0
       }]
     },
@@ -600,7 +635,6 @@ function renderRankingChart(rows, dataColIdx, prorrateoMap) {
     
     const key = `${f}_${t}`;
     const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    // LÓGICA CLAVE: Cada fila se divide por los playeros que compartieron el bloque
     const valorProrrateado = num(r[dataColIdx]) / numPlayerosEnTurno;
 
     if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
@@ -614,7 +648,7 @@ function renderRankingChart(rows, dataColIdx, prorrateoMap) {
     data: {
       labels: sorted.map(e => e[0]),
       datasets: [{
-        label: 'Volumen Asignado',
+        label: 'Volumen Asignado (Prorrateado)',
         data: sorted.map(e => Math.round(e[1])),
         backgroundColor: COLORS.chartSet,
         borderRadius: 4
@@ -635,9 +669,8 @@ function renderSecondaryBarChart(rows, dataColIdx, labelName, prorrateoMap) {
     
     const key = `${f}_${t}`;
     const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : (1 / numPlayerosEnTurno);
 
-    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) * factor;
+    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) / numPlayerosEnTurno;
   });
 
   const ctx = document.getElementById('chartSecondary').getContext('2d');
@@ -648,7 +681,7 @@ function renderSecondaryBarChart(rows, dataColIdx, labelName, prorrateoMap) {
       datasets: [{
         label: labelName,
         data: Object.values(turnsMap),
-        backgroundColor: ['#2563eb', '#f59e0b', '#7c3aed'],
+        backgroundColor: ['#e51225', '#fecb00', '#4b5563'],
         borderRadius: 4
       }]
     },
@@ -671,9 +704,9 @@ function setupEventListeners() {
   document.getElementById('btnModGnc').addEventListener('click', () => {
     currentModule = 'GNC';
     resetTabFilters();
-    document.getElementById('lblMainHeading').textContent = "Dashboard de ventas · GNC";
-    document.getElementById('brandBadge').className = "w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs";
-    document.getElementById('btnModGnc').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/10";
+    document.getElementById('lblMainHeading').textContent = "Dashboard de Ventas · GNC";
+    document.getElementById('brandBadge').className = "w-10 h-10 rounded-lg bg-[#e51225]/10 border border-[#e51225]/40 flex items-center justify-center font-black text-[#fecb00] text-sm tracking-tighter";
+    document.getElementById('btnModGnc').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-[#e51225] border-[#ff3344] text-white shadow-lg shadow-red-500/10";
     document.getElementById('btnModLiq').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-gray-800 border-gray-700 text-gray-400 hover:text-white";
     buildMonthFilters();
     updateDashboard();
@@ -682,9 +715,9 @@ function setupEventListeners() {
   document.getElementById('btnModLiq').addEventListener('click', () => {
     currentModule = 'LIQUIDOS';
     resetTabFilters();
-    document.getElementById('lblMainHeading').textContent = "Dashboard de ventas · Líquidos y Shop";
-    document.getElementById('brandBadge').className = "w-10 h-10 rounded-lg bg-orange-600/10 border border-orange-500/30 flex items-center justify-center font-bold text-orange-400 text-xs";
-    document.getElementById('btnModLiq').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-500/10";
+    document.getElementById('lblMainHeading').textContent = "Dashboard de Ventas · Líquidos y Shop";
+    document.getElementById('brandBadge').className = "w-10 h-10 rounded-lg bg-amber-600/10 border border-amber-500/30 flex items-center justify-center font-black text-amber-400 text-sm tracking-tighter";
+    document.getElementById('btnModLiq').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-500/10";
     document.getElementById('btnModGnc').className = "py-2.5 font-bold rounded-lg text-center border transition text-xs tracking-wider uppercase bg-gray-800 border-gray-700 text-gray-400 hover:text-white";
     buildMonthFilters();
     updateDashboard();
