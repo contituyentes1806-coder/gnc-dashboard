@@ -32,29 +32,27 @@
 
 <div class="max-w-[1500px] mx-auto">
 
-  <!-- ENCABEZADO FORMATO SHELL -->
+  <!-- ENCABEZADO -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-gray-800 pb-5">
     <div class="flex items-center gap-3">
       <div id="brandBadge" class="w-10 h-10 rounded-lg bg-amber-600/10 border border-amber-500/30 flex items-center justify-center font-black text-amber-400 text-sm tracking-tighter">SHELL</div>
       <div>
         <h1 class="text-lg font-bold tracking-tight" id="lblMainHeading">Dashboard de Ventas · Líquidos y Shop</h1>
-        <p class="text-xs text-gray-400" id="lblUpdated">Leyendo datos operativos en tiempo real...</p>
+        <p class="text-xs text-gray-400" id="lblUpdated">Sincronizando registros...</p>
       </div>
     </div>
     <div class="flex items-center gap-4 text-xs">
-      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> Prorrateo de Turnos Activo</div>
+      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> Filtro de Consistencia Activo</div>
       <button id="btnRefresh" class="bg-gray-800 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-md transition text-gray-200">Sincronizar Planilla</button>
     </div>
   </div>
 
-  <!-- BARRA CENTRAL DE FILTROS INTERACTIVOS -->
+  <!-- BARRA DE FILTROS -->
   <div class="card p-4 mb-6 space-y-3">
-    <!-- Filtro Período / Historial -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-24">PERÍODO / MES:</span>
       <div id="filterMonths" class="flex flex-wrap gap-1.5"></div>
     </div>
-    <!-- Filtro Turnos -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-24">TURNO:</span>
       <div id="filterTurns" class="flex flex-wrap gap-1.5">
@@ -64,7 +62,6 @@
         <button class="pill px-3 py-1 rounded-full" data-turn="NOCHE">Noche</button>
       </div>
     </div>
-    <!-- Filtro Playeros -->
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-xs font-semibold text-gray-400 w-24">PLAYERO:</span>
       <div id="filterWorkers" class="flex flex-wrap gap-1.5">
@@ -73,21 +70,21 @@
     </div>
   </div>
 
-  <!-- SECCIÓN DINÁMICA DE TARJETAS MÉTRICAS -->
+  <!-- METRICAS -->
   <div id="metricsGrid" class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6"></div>
 
-  <!-- ALERTA DE DÍA EN CURSO -->
+  <!-- AVISO AUDITORIA -->
   <div class="card p-3 border-yellow-500/20 bg-yellow-500/5 mb-6 text-xs flex items-center gap-2 text-gray-300">
     <span>🛡️</span>
-    <p id="lblAlert">Validando consistencia de datos de planillas...</p>
+    <p id="lblAlert">Procesando matriz de datos...</p>
   </div>
 
-  <!-- GRÁFICOS PRINCIPALES -->
+  <!-- GRAFICOS FILA 1 -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
     <div class="card p-4 lg:col-span-2">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300" id="lblChartMainTitle">Evolución Diaria</h3>
-        <span class="text-[10px] bg-gray-800 text-yellow-400 px-2 py-0.5 rounded-full" id="lblChartMainBadge">AUDITADO</span>
+        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300" id="lblChartMainTitle">Evolución</h3>
+        <span class="text-[10px] bg-gray-800 text-yellow-400 px-2 py-0.5 rounded-full">AUDITADO</span>
       </div>
       <div class="h-64"><canvas id="chartMain"></canvas></div>
     </div>
@@ -97,14 +94,14 @@
     </div>
   </div>
 
-  <!-- SEGUNDA FILA DE GRÁFICOS -->
+  <!-- GRAFICOS FILA 2 -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="card p-4 lg:col-span-2">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance por Playero</h3>
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance</h3>
       <div class="h-64"><canvas id="chartRanking"></canvas></div>
     </div>
     <div class="card p-4">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblChartSecTitle">Ventas Complementarias</h3>
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblChartSecTitle">Ventas</h3>
       <div class="h-64"><canvas id="chartSecondary"></canvas></div>
     </div>
   </div>
@@ -135,6 +132,7 @@ async function fetchData() {
     const resLiq = await fetch(URL_LIQ + "&cb=" + Date.now()).then(r => r.text());
     rawLiqData = Papa.parse(resLiq.trim(), { skipEmptyLines: true }).data;
 
+    // Remover fila de encabezados si existe texto en lugar de fecha
     if (rawLiqData.length && isNaN(parseRowDate(rawLiqData[0][0]).getTime())) {
       rawLiqData.shift(); 
     }
@@ -145,7 +143,7 @@ async function fetchData() {
     const now = new Date();
     document.getElementById('lblUpdated').textContent = `Última sincronización: ${now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}`;
   } catch (err) {
-    console.error("Error crítico cargando datos:", err);
+    console.error("Error cargando datos:", err);
   }
 }
 
@@ -171,7 +169,7 @@ function parseRowDate(str) {
   return new Date(NaN);
 }
 
-// MOTOR DE LIMPIEZA SEGURO: Quita letras como "Lt" o "$" y convierte comas a puntos matemáticos
+// LIMPIEZA MATEMÁTICA: Remueve de raíz los textos "Lt", "Lts" o "$"
 function num(v) {
   if (!v) return 0;
   const cleanStr = String(v)
@@ -194,7 +192,7 @@ function getClosedDaysMap(dataSrc) {
   });
   const closedMap = {};
   for (const date in dayTurns) {
-    closedMap[date] = true; // Permite procesar de forma flexible sin exigir estrictamente los 3 turnos cargados
+    closedMap[date] = true;
   }
   return closedMap;
 }
@@ -228,9 +226,7 @@ function buildMonthFilters() {
     if (!r[0]) return;
     const d = parseRowDate(r[0]);
     if (!isNaN(d.getTime()) && closedMap[r[0].trim()]) {
-      // Filtro histórico estricto: Mayo 2026 en adelante
       if (d.getFullYear() < 2026 || (d.getFullYear() === 2026 && d.getMonth() < 4)) return;
-      
       let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
       uniqueMonths.add(label);
       if (!latestDate || d > latestDate) latestDate = d;
@@ -307,7 +303,7 @@ function updateDashboard() {
   const prorrateoMap = getProrrateoMap(rawLiqData, closedMap);
 
   let baseRows = rawLiqData.filter(r => {
-    if (!r[0] || !r[1] || String(r[0]).trim() === "") return false; // Salteo automático de baches y celdas sin datos
+    if (!r[0] || !r[1] || String(r[0]).trim() === "") return false; // Salteo automático de baches vacíos (ej: 03-07)
     const f = r[0].trim();
     
     const d = parseRowDate(f);
@@ -328,7 +324,7 @@ function updateDashboard() {
   }
 
   const modoTexto = activeFilters.month === 'CURSO' ? `MES EN CURSO (${currentMonthLabelGlobal})` : (activeFilters.month === 'TODOS' ? 'HISTORIAL CONSOLIDADO' : `PERÍODO ${activeFilters.month}`);
-  document.getElementById('lblAlert').textContent = `Filtro de Auditoría Shell: ${modoTexto} | Prorrateo equitativo activo para turnos simultáneos.`;
+  document.getElementById('lblAlert').textContent = `Auditoría Interna Shell: ${modoTexto} | Mapeo indexado por posición de celda activo.`;
 
   renderLiquidosDashboard(displayRows, prorrateoMap);
 }
@@ -348,10 +344,10 @@ function renderLiquidosDashboard(displayRows, prorrateoMap) {
     const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : 1;
 
     if (activeFilters.worker !== 'Todos') {
-      heladera += num(r[4]) * factor;
-      varios += num(r[5]) * factor;
-      aceite += num(r[6]) * factor; 
-      totalLitros += num(r[14]) * factor; // Columna O indexada de Litros Totales Combustible
+      heladera += num(r[4]) * factor; // Columna E (Heladera)
+      varios += num(r[5]) * factor;   // Columna F (Varios)
+      aceite += num(r[6]) * factor;   // Columna G (Lubricantes LTS)
+      totalLitros += num(r[11]) * factor; // Columna L (Total Litros/Venta Turno)
     }
     uniqueDays.add(f);
   });
@@ -360,7 +356,7 @@ function renderLiquidosDashboard(displayRows, prorrateoMap) {
     totalLitros = 0; heladera = 0; varios = 0; aceite = 0;
     const yaSumado = new Set();
     displayRows.forEach(r => {
-      const idUnicoFila = `${r[0]}_${r[1]}_${r[2]}_${r[14]}`;
+      const idUnicoFila = `${r[0]}_${r[1]}_${r[2]}_${r[11]}`;
       const key = `${r[0].trim()}_${r[1].toUpperCase().trim()}`;
       const divisor = prorrateoMap[key] ? prorrateoMap[key].size : 1;
 
@@ -369,7 +365,7 @@ function renderLiquidosDashboard(displayRows, prorrateoMap) {
         heladera += num(r[4]) / divisor;
         varios += num(r[5]) / divisor;
         aceite += num(r[6]) / divisor; 
-        totalLitros += num(r[14]) / divisor;
+        totalLitros += num(r[11]) / divisor;
       }
     });
   }
@@ -417,14 +413,14 @@ function renderLiquidosDashboard(displayRows, prorrateoMap) {
     
     const key = `${f}_${t}`;
     const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    daysMap[f] = (daysMap[f] || 0) + (num(r[14]) / numPlayerosEnTurno);
+    daysMap[f] = (daysMap[f] || 0) + (num(r[11]) / numPlayerosEnTurno);
   });
   const labelsDates = Object.keys(daysMap).sort();
   const valuesLts = labelsDates.map(k => daysMap[k]);
 
   renderMainLineChart(labelsDates, valuesLts, "Litros Combustible", promedioLts, '#f59e0b');
-  renderTurnsChart(displayRows, 14, prorrateoMap); 
-  renderRankingChart(displayRows, 14, prorrateoMap); 
+  renderTurnsChart(displayRows, 11, prorrateoMap); 
+  renderRankingChart(displayRows, 11, prorrateoMap); 
   renderSecondaryBarChart(displayRows, 4, "Heladera $", prorrateoMap); 
 }
 
