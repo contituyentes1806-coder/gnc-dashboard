@@ -1,256 +1,559 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Ventas - Líquidos y Shop</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-principal: #0d1117;
-            --bg-tarjeta: #161b22;
-            --borde-tarjeta: #30363d;
-            --texto-principal: #c9d1d9;
-            --texto-secundario: #8b949e;
-            --color-combustible: #ff9f43;
-            --color-heladera: #ff4d4d;
-            --color-varios: #ffb84d;
-            --color-lubricantes: #2ed573;
-            --color-promedio: #a55eea;
-            --color-exito: #2ecc71;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-principal);
-            color: var(--texto-principal);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--borde-tarjeta);
-            padding-bottom: 20px;
-            margin-bottom: 25px;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .header .status {
-            font-size: 14px;
-            color: var(--texto-secundario);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            background-color: var(--color-exito);
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        /* Grid de Tarjetas de Control KPI */
-        .grid-kpis {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background-color: var(--bg-tarjeta);
-            border: 1px solid var(--borde-tarjeta);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .card-title {
-            font-size: 12px;
-            text-transform: uppercase;
-            color: var(--texto-secundario);
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-        }
-
-        .card-value {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        /* Colores específicos para los valores */
-        .val-combustible { color: var(--color-combustible); }
-        .val-heladera { color: var(--color-heladera); }
-        .val-varios { color: var(--color-varios); }
-        .val-lubricantes { color: var(--color-lubricantes); }
-        .val-promedio { color: var(--color-promedio); }
-
-        /* Consola de Alertas */
-        .alert-box {
-            background-color: rgba(241, 196, 15, 0.1);
-            border: 1px solid #f1c40f;
-            color: #f1c40f;
-            border-radius: 6px;
-            padding: 12px 15px;
-            font-size: 13px;
-            margin-bottom: 25px;
-            display: none; /* Se muestra dinámicamente si hay baches */
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Gerencial · Control Shell Constituyentes</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg: #090d16;
+    --card: #111625;
+    --card-border: #1f2638;
+    --shell-red: #e51225;
+    --shell-yellow: #fecb00;
+    --text-primary: #f3f4f6;
+  }
+  html, body { background-color: var(--bg); color: var(--text-primary); font-family: system-ui, -apple-system, sans-serif; }
+  .card { background-color: var(--card); border: 1px solid var(--card-border); border-radius: 12px; }
+  .live-dot { width: 8px; height: 8px; border-radius: 9999px; background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  
+  .pill { background: #1a2333; color: #9ca3af; border: 1px solid #2d394f; transition: all 0.2s; cursor: pointer; font-size: 11px; font-weight: 600; }
+  .pill:hover { border-color: #4b5563; color: #fff; }
+  .pill.active-gnc { background: var(--shell-red); color: #fff; border-color: #ff3344; box-shadow: 0 0 10px rgba(229,18,37,0.4); }
+  .pill.active-liq { background: #d97706; color: #fff; border-color: #f59e0b; box-shadow: 0 0 10px rgba(217,119,6,0.4); }
+  .pill.active-teal { background: #0d9488; color: #fff; border-color: #14b8a6; box-shadow: 0 0 10px rgba(20,184,166,0.3); }
+</style>
 </head>
-<body>
+<body class="min-h-screen p-4 md:p-6">
 
-    <div class="container">
-        
-        <div class="header">
-            <div>
-                <h1>Dashboard de ventas &middot; Líquidos y Shop</h1>
-                <p style="margin: 5px 0 0 0; color: var(--texto-secundario); font-size: 14px;">Estación de Servicio Constituyentes 1806</p>
-            </div>
-            <div class="status">
-                <span class="status-indicator"></span> En vivo / Sincronizado
-            </div>
-        </div>
+<div class="max-w-[1500px] mx-auto">
 
-        <div id="alertBox" class="alert-box"></div>
-
-        <div class="grid-kpis">
-            
-            <div class="card" style="border-left: 4px solid var(--color-combustible);">
-                <div class="card-title">Lts Combustible Acumulados</div>
-                <div id="kpiCombustible" class="card-value val-combustible">0 L</div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid var(--color-heladera);">
-                <div class="card-title">Tienda Heladera</div>
-                <div id="kpiHeladera" class="card-value val-heladera">$ 0</div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid var(--color-varios);">
-                <div class="card-title">Varios Shop</div>
-                <div id="kpiVarios" class="card-value val-varios">$ 0</div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid var(--color-lubricantes);">
-                <div class="card-title">Lubricantes Liq.</div>
-                <div id="kpiLubricantes" class="card-value val-lubricantes">0 L</div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid var(--texto-principal);">
-                <div class="card-title">Días Consolidados</div>
-                <div id="kpiDias" class="card-value">0</div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid var(--color-promedio);">
-                <div class="card-title">Prom. Despacho Diario</div>
-                <div id="kpiPromedio" class="card-value val-promedio">0 L</div>
-            </div>
-
-        </div>
-
+  <!-- ENCABEZADO FORMATO SHELL -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-gray-800 pb-5">
+    <div class="flex items-center gap-3">
+      <div id="brandBadge" class="w-10 h-10 rounded-lg bg-amber-600/10 border border-amber-500/30 flex items-center justify-center font-black text-amber-400 text-sm tracking-tighter">SHELL</div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight" id="lblMainHeading">Dashboard de Ventas · Líquidos y Shop</h1>
+        <p class="text-xs text-gray-400" id="lblUpdated">Leyendo datos operativos en tiempo real...</p>
+      </div>
     </div>
+    <div class="flex items-center gap-4 text-xs">
+      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> Prorrateo de Turnos Activo</div>
+      <button id="btnRefresh" class="bg-gray-800 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-md transition text-gray-200">Sincronizar Planilla</button>
+    </div>
+  </div>
 
-    <script>
-        /**
-         * Parsea y limpia de forma segura cualquier cadena de texto proveniente de las celdas.
-         * Quita letras ("Lt", "Lts", "$"), espacios y normaliza las comas decimales.
-         */
-        function limpiarYConvertirNumero(valorRaw) {
-            if (!valorRaw) return 0;
-            let stringLimpio = String(valorRaw)
-                .replace(/[^\d.,-]/g, "") // Remueve todo lo que no sea número, punto, coma o signo menos
-                .replace(",", ".");       // Convierte formato de coma decimal a punto estándar
-            let numero = parseFloat(stringLimpio);
-            return isNaN(numero) ? 0 : numero;
-        }
+  <!-- BARRA CENTRAL DE FILTROS INTERACTIVOS -->
+  <div class="card p-4 mb-6 space-y-3">
+    <!-- Filtro Período / Historial -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+      <span class="text-xs font-semibold text-gray-400 w-24">PERÍODO / MES:</span>
+      <div id="filterMonths" class="flex flex-wrap gap-1.5"></div>
+    </div>
+    <!-- Filtro Turnos -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-xs font-semibold text-gray-400 w-24">TURNO:</span>
+      <div id="filterTurns" class="flex flex-wrap gap-1.5">
+        <button class="pill px-3 py-1 rounded-full active-liq" data-turn="Todos">Todos</button>
+        <button class="pill px-3 py-1 rounded-full" data-turn="MAÑANA">Mañana</button>
+        <button class="pill px-3 py-1 rounded-full" data-turn="TARDE">Tarde</button>
+        <button class="pill px-3 py-1 rounded-full" data-turn="NOCHE">Noche</button>
+      </div>
+    </div>
+    <!-- Filtro Playeros -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-xs font-semibold text-gray-400 w-24">PLAYERO:</span>
+      <div id="filterWorkers" class="flex flex-wrap gap-1.5">
+        <button class="pill px-3 py-1 rounded-full active-teal" data-worker="Todos">Todos</button>
+      </div>
+    </div>
+  </div>
 
-        /**
-         * Procesa el array de filas de la Planilla Maestra (Hoja 2 liq).
-         * Filtra baches vacíos y previene errores de formato de texto o concatenación.
-         */
-        function procesarDatosPlanilla(filasPlanilla) {
-            let acumuladorLitros = 0;
-            let acumuladorHeladera = 0;
-            let acumuladorVarios = 0;
-            let acumuladorLubricantes = 0;
-            
-            // Set dinámico para contar los días reales únicos sin duplicar por turnos compartidos
-            let diasContados = new Set(); 
-            let alertasBaches = [];
+  <!-- SECCIÓN DINÁMICA DE TARJETAS MÉTRICAS -->
+  <div id="metricsGrid" class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6"></div>
 
-            filasPlanilla.forEach((fila, index) => {
-                // Validación estricta: Si no tiene fecha o turno, se considera bache o celda de utilería
-                if (!fila.Fecha || String(fila.Fecha).trim() === "" || !fila.Turno) {
-                    if (fila.Fecha && String(fila.Fecha).trim() !== "") {
-                        alertasBaches.push(`Fila ${index + 2}: Falta especificar Turno o Playero para la fecha ${fila.Fecha}.`);
-                    }
-                    return; // Salteo seguro de la fila sin romper la ejecución
-                }
+  <!-- ALERTA DE DÍA EN CURSO -->
+  <div class="card p-3 border-yellow-500/20 bg-yellow-500/5 mb-6 text-xs flex items-center gap-2 text-gray-300">
+    <span>🛡️</span>
+    <p id="lblAlert">Validando consistencia de datos de planillas...</p>
+  </div>
 
-                // Extracción y limpieza matemática de los campos clave de la Hoja 2 liq
-                let litros = limpiarYConvertirNumero(fila.ventaTotalComb || fila.TotalCombustible);
-                let heladera = limpiarYConvertirNumero(fila.Heladera);
-                let varios = limpiarYConvertirNumero(fila.Varios);
-                let lubricantes = limpiarYConvertirNumero(fila.LubricantesLTS || fila.Lubricantes);
+  <!-- GRÁFICOS PRINCIPALES -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="card p-4 lg:col-span-2">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300" id="lblChartMainTitle">Evolución Diaria</h3>
+        <span class="text-[10px] bg-gray-800 text-yellow-400 px-2 py-0.5 rounded-full" id="lblChartMainBadge">AUDITADO</span>
+      </div>
+      <div class="h-64"><canvas id="chartMain"></canvas></div>
+    </div>
+    <div class="card p-4">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4">Distribución por Turno</h3>
+      <div class="h-64"><canvas id="chartTurns"></canvas></div>
+    </div>
+  </div>
 
-                // Acumulación sólo si la fila contiene transacciones válidas
-                if (litros > 0 || heladera > 0 || varios > 0 || lubricantes > 0) {
-                    acumuladorLitros += litros;
-                    acumuladorHeladera += heladera;
-                    acumuladorVarios += varios;
-                    acumuladorLubricantes += lubricantes;
-                    
-                    // Almacena la fecha formateada para saber cuántos días de operación reales van consolidados
-                    diasContados.add(String(fila.Fecha).trim());
-                }
-            });
+  <!-- SEGUNDA FILA DE GRÁFICOS -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="card p-4 lg:col-span-2">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance por Playero</h3>
+      <div class="h-64"><canvas id="chartRanking"></canvas></div>
+    </div>
+    <div class="card p-4">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblChartSecTitle">Ventas Complementarias</h3>
+      <div class="h-64"><canvas id="chartSecondary"></canvas></div>
+    </div>
+  </div>
 
-            let totalDiasReales = diasContados.size;
+</div>
 
-            // Renderizar alertas en el Dashboard si se detectaron celdas inconsistentes
-            const alertBox = document.getElementById('alertBox');
-            if (alertasBaches.length > 0) {
-                alertBox.innerHTML = `<strong>Aviso de Auditoría Interna:</strong> Se detectaron baches informativos o filas sin turnos asignados en la Planilla Maestra que fueron omitidos de forma segura para no alterar los gráficos.`;
-                alertBox.style.display = 'block';
-            } else {
-                alertBox.style.display = 'none';
-            }
+<script>
+const BASE_URL = "https://docs.google.com/spreadsheets/d/1Mi9g0qnBZRj70IdQl_6M1JxjMGRnyw1wOCh56D7cv64/gviz/tq?tqx=out:csv";
+const URL_LIQ = BASE_URL + "&sheet=Hoja%202%20liq";
 
-            // Actualización de la interfaz del Front-End con formatos legibles
-            document.getElementById('kpiCombustible').innerText = `${acumuladorLitros.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} L`;
-            document.getElementById('kpiHeladera').innerText = `$ ${acumuladorHeladera.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 2})}`;
-            document.getElementById('kpiVarios').innerText = `$ ${acumuladorVarios.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 2})}`;
-            document.getElementById('kpiLubricantes').innerText = `${acumuladorLubricantes.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} L`;
-            document.getElementById('kpiDias').innerText = totalDiasReales;
-            
-            let promedio = totalDiasReales > 0 ? (acumuladorLitros / totalDiasReales) : 0;
-            document.getElementById('kpiPromedio').innerText = `${promedio.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} L`;
-        }
+let rawLiqData = [];
+let activeFilters = { month: 'CURSO', turn: 'Todos', worker: 'Todos' };
+let charts = {};
+let currentMonthLabelGlobal = "";
 
-        // Ejemplo de ejecución/testeo nativo (Sustituir por la llamada fetch a tu API de Google Sheets)
-        // const datosEjemplo = [{ Fecha: "01-07-2026", Turno: "MAÑANA", ventaTotalComb: "2246 Lt", Heladera: "18000", Varios: "64000" }];
-        // procesarDatosPlanilla(datosEjemplo);
-    </script>
+const COLORS = {
+  orange: '#ea580c', yellow: '#fecb00', teal: '#0d9488',
+  chartSet: ['#f59e0b', '#fecb00', '#10b981', '#8b5cf6', '#06b6d4', '#ea580c', '#14b8a6']
+};
+
+async function init() {
+  setupEventListeners();
+  await fetchData();
+}
+
+async function fetchData() {
+  try {
+    const resLiq = await fetch(URL_LIQ + "&cb=" + Date.now()).then(r => r.text());
+    rawLiqData = Papa.parse(resLiq.trim(), { skipEmptyLines: true }).data;
+
+    if (rawLiqData.length && isNaN(parseRowDate(rawLiqData[0][0]).getTime())) {
+      rawLiqData.shift(); 
+    }
+
+    buildMonthFilters();
+    updateDashboard();
+    
+    const now = new Date();
+    document.getElementById('lblUpdated').textContent = `Última sincronización: ${now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}`;
+  } catch (err) {
+    console.error("Error crítico cargando datos:", err);
+  }
+}
+
+function parseRowDate(str) {
+  if (!str) return new Date(NaN);
+  const cleanStr = str.trim().replace(/["']/g, '');
+  const parts = cleanStr.split(/[\/\-]/);
+  
+  if (parts.length === 3) {
+    let day, month, year;
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      day = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      year = parseInt(parts[2], 10);
+      if (year < 100) year += 2000;
+    }
+    return new Date(year, month, day);
+  }
+  return new Date(NaN);
+}
+
+// MOTOR DE LIMPIEZA SEGURO: Quita letras como "Lt" o "$" y convierte comas a puntos matemáticos
+function num(v) {
+  if (!v) return 0;
+  const cleanStr = String(v)
+    .replace(/[^\d.,-]/g, "") 
+    .replace(",", ".");       
+  const n = parseFloat(cleanStr);
+  return isNaN(n) ? 0 : n;
+}
+
+function getClosedDaysMap(dataSrc) {
+  const dayTurns = {};
+  dataSrc.forEach(r => {
+    if (!r[0] || !r[1]) return;
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    if (t==='MAÑANA' || t==='TARDE' || t==='NOCHE') {
+      if (!dayTurns[f]) dayTurns[f] = new Set();
+      dayTurns[f].add(t);
+    }
+  });
+  const closedMap = {};
+  for (const date in dayTurns) {
+    closedMap[date] = true; // Permite procesar de forma flexible sin exigir estrictamente los 3 turnos cargados
+  }
+  return closedMap;
+}
+
+function getProrrateoMap(dataSrc, closedMap) {
+  const prorrateo = {};
+  dataSrc.forEach(r => {
+    if (!r[0] || !r[1] || !r[2]) return;
+    const f = r[0].trim();
+    if (!closedMap[f]) return; 
+    const t = r[1].toUpperCase().trim();
+    const p = r[2].trim();
+    if (p !== "") {
+      const key = `${f}_${t}`;
+      if (!prorrateo[key]) prorrateo[key] = new Set();
+      prorrateo[key].add(p);
+    }
+  });
+  return prorrateo;
+}
+
+function buildMonthFilters() {
+  const monthsDiv = document.getElementById('filterMonths');
+  monthsDiv.innerHTML = '';
+  
+  const closedMap = getClosedDaysMap(rawLiqData);
+  const uniqueMonths = new Set();
+  let latestDate = null;
+  
+  rawLiqData.forEach(r => {
+    if (!r[0]) return;
+    const d = parseRowDate(r[0]);
+    if (!isNaN(d.getTime()) && closedMap[r[0].trim()]) {
+      // Filtro histórico estricto: Mayo 2026 en adelante
+      if (d.getFullYear() < 2026 || (d.getFullYear() === 2026 && d.getMonth() < 4)) return;
+      
+      let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+      uniqueMonths.add(label);
+      if (!latestDate || d > latestDate) latestDate = d;
+    }
+  });
+
+  if (latestDate) {
+    currentMonthLabelGlobal = latestDate.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+  } else {
+    currentMonthLabelGlobal = "JUL 26";
+  }
+
+  const activeClass = 'active-liq';
+
+  const btnCurso = document.createElement('button');
+  btnCurso.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'CURSO' ? activeClass : ''}`;
+  btnCurso.textContent = `MES EN CURSO (${currentMonthLabelGlobal})`;
+  btnCurso.onclick = () => { selectFilter('month', 'CURSO'); };
+  monthsDiv.appendChild(btnCurso);
+
+  const btnAll = document.createElement('button');
+  btnAll.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'TODOS' ? activeClass : ''}`;
+  btnAll.textContent = "HISTORIAL (POST MAYO 2026)";
+  btnAll.onclick = () => { selectFilter('month', 'TODOS'); };
+  monthsDiv.appendChild(btnAll);
+
+  Array.from(uniqueMonths).sort((a,b) => b.localeCompare(a)).forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = `pill px-3 py-1 rounded-full ${activeFilters.month === m ? activeClass : ''}`;
+    btn.textContent = m;
+    btn.onclick = () => { selectFilter('month', m); };
+    monthsDiv.appendChild(btn);
+  });
+}
+
+function buildWorkerFilters(filteredRows) {
+  const workersDiv = document.getElementById('filterWorkers');
+  const currentSelection = activeFilters.worker;
+  workersDiv.innerHTML = '';
+
+  const workers = new Set();
+  filteredRows.forEach(r => {
+    if (r[2] && r[2].trim()) workers.add(r[2].trim());
+  });
+
+  const btnAll = document.createElement('button');
+  btnAll.className = `pill px-3 py-1 rounded-full ${currentSelection === 'Todos' ? 'active-teal' : ''}`;
+  btnAll.textContent = "Todos";
+  btnAll.onclick = () => { selectFilter('worker', 'Todos'); };
+  workersDiv.appendChild(btnAll);
+
+  Array.from(workers).sort().forEach(w => {
+    const btn = document.createElement('button');
+    btn.className = `pill px-3 py-1 rounded-full ${currentSelection === w ? 'active-teal' : ''}`;
+    btn.textContent = w;
+    btn.onclick = () => { selectFilter('worker', w); };
+    workersDiv.appendChild(btn);
+  });
+}
+
+function selectFilter(type, value) {
+  activeFilters[type] = value;
+  if (type === 'month') buildMonthFilters();
+  if (type === 'turn') {
+    document.querySelectorAll('#filterTurns .pill').forEach(b => {
+      b.classList.toggle('active-liq', b.getAttribute('data-turn') === value);
+    });
+  }
+  updateDashboard();
+}
+
+function updateDashboard() {
+  const closedMap = getClosedDaysMap(rawLiqData);
+  const prorrateoMap = getProrrateoMap(rawLiqData, closedMap);
+
+  let baseRows = rawLiqData.filter(r => {
+    if (!r[0] || !r[1] || String(r[0]).trim() === "") return false; // Salteo automático de baches y celdas sin datos
+    const f = r[0].trim();
+    
+    const d = parseRowDate(f);
+    if (isNaN(d.getTime())) return false;
+    if (d.getFullYear() < 2026 || (d.getFullYear() === 2026 && d.getMonth() < 4)) return false;
+    
+    if (activeFilters.month === 'TODOS') return true;
+    let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+    if (activeFilters.month === 'CURSO') return label === currentMonthLabelGlobal;
+    return label === activeFilters.month.toUpperCase();
+  });
+
+  buildWorkerFilters(baseRows);
+
+  let displayRows = baseRows;
+  if (activeFilters.turn !== 'Todos') {
+    displayRows = displayRows.filter(r => r[1] && r[1].toUpperCase().trim() === activeFilters.turn.toUpperCase());
+  }
+
+  const modoTexto = activeFilters.month === 'CURSO' ? `MES EN CURSO (${currentMonthLabelGlobal})` : (activeFilters.month === 'TODOS' ? 'HISTORIAL CONSOLIDADO' : `PERÍODO ${activeFilters.month}`);
+  document.getElementById('lblAlert').textContent = `Filtro de Auditoría Shell: ${modoTexto} | Prorrateo equitativo activo para turnos simultáneos.`;
+
+  renderLiquidosDashboard(displayRows, prorrateoMap);
+}
+
+function renderLiquidosDashboard(displayRows, prorrateoMap) {
+  let totalLitros = 0, heladera = 0, varios = 0, aceite = 0;
+  const uniqueDays = new Set();
+
+  displayRows.forEach(r => {
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    const p = r[2].trim();
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+
+    if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
+    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : 1;
+
+    if (activeFilters.worker !== 'Todos') {
+      heladera += num(r[4]) * factor;
+      varios += num(r[5]) * factor;
+      aceite += num(r[6]) * factor; 
+      totalLitros += num(r[14]) * factor; // Columna O indexada de Litros Totales Combustible
+    }
+    uniqueDays.add(f);
+  });
+
+  if (activeFilters.worker === 'Todos') {
+    totalLitros = 0; heladera = 0; varios = 0; aceite = 0;
+    const yaSumado = new Set();
+    displayRows.forEach(r => {
+      const idUnicoFila = `${r[0]}_${r[1]}_${r[2]}_${r[14]}`;
+      const key = `${r[0].trim()}_${r[1].toUpperCase().trim()}`;
+      const divisor = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+
+      if (!yaSumado.has(idUnicoFila)) {
+        yaSumado.add(idUnicoFila);
+        heladera += num(r[4]) / divisor;
+        varios += num(r[5]) / divisor;
+        aceite += num(r[6]) / divisor; 
+        totalLitros += num(r[14]) / divisor;
+      }
+    });
+  }
+
+  const cantDias = uniqueDays.size || 1;
+  const promedioLts = totalLitros / cantDias;
+
+  const grid = document.getElementById('metricsGrid');
+  grid.innerHTML = `
+    <div class="card p-4 border-l-4 border-amber-500">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LTS COMBUSTIBLE</p>
+      <p class="text-xl font-black text-amber-500 mt-1">${Math.round(totalLitros).toLocaleString('es-AR')} L</p>
+    </div>
+    <div class="card p-4 border-l-4 border-red-500">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">TIENDA HELADERA</p>
+      <p class="text-xl font-black text-red-500 mt-1">$ ${Math.round(heladera).toLocaleString('es-AR')}</p>
+    </div>
+    <div class="card p-4 border-l-4 border-yellow-500">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VARIOS SHOP</p>
+      <p class="text-xl font-black text-yellow-500 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
+    </div>
+    <div class="card p-4 border-l-4 border-teal-500">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LUBRICANTES LIQ.</p>
+      <p class="text-xl font-black text-teal-400 mt-1">${Math.round(aceite).toLocaleString('es-AR')} L</p>
+    </div>
+    <div class="card p-4 border-l-4 border-gray-600">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">DÍAS LIQUIDADOS</p>
+      <p class="text-xl font-black text-gray-300 mt-1">${cantDias}</p>
+    </div>
+    <div class="card p-4">
+      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. JORNADA</p>
+      <p class="text-xl font-black text-purple-400 mt-1">${Math.round(promedioLts).toLocaleString('es-AR')} L</p>
+    </div>
+  `;
+
+  document.getElementById('lblChartMainTitle').textContent = "Evolución Combustibles Líquidos (Litros)";
+  document.getElementById('lblRankingTitle').textContent = "Despacho Equitativo por Playero (Litros)";
+  document.getElementById('lblChartSecTitle').textContent = "Ingresos del Shop (Heladera $)";
+
+  const daysMap = {};
+  displayRows.forEach(r => {
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
+    
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    daysMap[f] = (daysMap[f] || 0) + (num(r[14]) / numPlayerosEnTurno);
+  });
+  const labelsDates = Object.keys(daysMap).sort();
+  const valuesLts = labelsDates.map(k => daysMap[k]);
+
+  renderMainLineChart(labelsDates, valuesLts, "Litros Combustible", promedioLts, '#f59e0b');
+  renderTurnsChart(displayRows, 14, prorrateoMap); 
+  renderRankingChart(displayRows, 14, prorrateoMap); 
+  renderSecondaryBarChart(displayRows, 4, "Heladera $", prorrateoMap); 
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); } }
+
+const baseChartOptions = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#9ca3af', font: { size: 10 } } } },
+  scales: {
+    x: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.01)' } },
+    y: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.02)' } }
+  }
+};
+
+function renderMainLineChart(labels, dataValues, datasetLabel, average, colorGlow) {
+  destroyChart('main');
+  const ctx = document.getElementById('chartMain').getContext('2d');
+  charts.main = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: datasetLabel, data: dataValues, borderColor: colorGlow, backgroundColor: 'rgba(245,158,11,0.02)', fill: true, tension: 0.1, borderWidth: 2 },
+        { label: 'Media Período', data: dataValues.map(() => average), borderColor: '#fecb00', borderDash: [4, 4], pointRadius: 0, borderWidth: 1 }
+      ]
+    },
+    options: baseChartOptions
+  });
+}
+
+function renderTurnsChart(rows, dataColIdx, prorrateoMap) {
+  destroyChart('turns');
+  const turnsMap = { 'MAÑANA': 0, 'TARDE': 0, 'NOCHE': 0 };
+  
+  rows.forEach(r => {
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
+    
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) / numPlayerosEnTurno;
+  });
+
+  const ctx = document.getElementById('chartTurns').getContext('2d');
+  charts.turns = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(turnsMap),
+      datasets: [{
+        data: Object.values(turnsMap),
+        backgroundColor: ['#e51225', '#fecb00', '#4b5563'],
+        borderWidth: 0
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } } }
+  });
+}
+
+function renderRankingChart(rows, dataColIdx, prorrateoMap) {
+  destroyChart('ranking');
+  const rank = {};
+  
+  rows.forEach(r => {
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    const p = (r[2] || '').trim();
+    if (!p) return;
+    
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    const valorProrrateado = num(r[dataColIdx]) / numPlayerosEnTurno;
+
+    if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
+    rank[p] = (rank[p] || 0) + valorProrrateado;
+  });
+
+  const sorted = Object.entries(rank).sort((a, b) => b[1] - a[1]);
+  const ctx = document.getElementById('chartRanking').getContext('2d');
+  charts.ranking = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(e => e[0]),
+      datasets: [{
+        label: 'Litros Asignados',
+        data: sorted.map(e => Math.round(e[1])),
+        backgroundColor: COLORS.chartSet,
+        borderRadius: 4
+      }]
+    },
+    options: { indexAxis: 'y', ...baseChartOptions, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderSecondaryBarChart(rows, dataColIdx, labelName, prorrateoMap) {
+  destroyChart('secondary');
+  const turnsMap = { 'MAÑANA': 0, 'TARDE': 0, 'NOCHE': 0 };
+  
+  rows.forEach(r => {
+    const f = r[0].trim();
+    const t = r[1].toUpperCase().trim();
+    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
+    
+    const key = `${f}_${t}`;
+    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) / numPlayerosEnTurno;
+  });
+
+  const ctx = document.getElementById('chartSecondary').getContext('2d');
+  charts.secondary = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(turnsMap),
+      datasets: [{
+        label: labelName,
+        data: Object.values(turnsMap),
+        backgroundColor: ['#e51225', '#fecb00', '#4b5563'],
+        borderRadius: 4
+      }]
+    },
+    options: { ...baseChartOptions, plugins: { legend: { display: false } } }
+  });
+}
+
+function setupEventListeners() {
+  document.getElementById('btnRefresh').addEventListener('click', fetchData);
+}
+
+window.onload = init;
+</script>
 </body>
 </html>
