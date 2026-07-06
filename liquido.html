@@ -3,553 +3,1066 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Gerencial · Control Shell Constituyentes</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<title>Dashboard — Estación de Servicio</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #090d16;
-    --card: #111625;
-    --card-border: #1f2638;
-    --shell-red: #e51225;
-    --shell-yellow: #fecb00;
-    --text-primary: #f3f4f6;
+    --bg:       #0a0f1e;
+    --surface:  #0f172a;
+    --card:     #131c31;
+    --border:   #1e2d45;
+    --border2:  #243452;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --blue:     #3b82f6;
+    --blue2:    #1d4ed8;
+    --cyan:     #22d3ee;
+    --green:    #22c55e;
+    --orange:   #f97316;
+    --amber:    #f59e0b;
+    --purple:   #a78bfa;
+    --red:      #ef4444;
   }
-  html, body { background-color: var(--bg); color: var(--text-primary); font-family: system-ui, -apple-system, sans-serif; }
-  .card { background-color: var(--card); border: 1px solid var(--card-border); border-radius: 12px; }
-  .live-dot { width: 8px; height: 8px; border-radius: 9999px; background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-  
-  .pill { background: #1a2333; color: #9ca3af; border: 1px solid #2d394f; transition: all 0.2s; cursor: pointer; font-size: 11px; font-weight: 600; }
-  .pill:hover { border-color: #4b5563; color: #fff; }
-  .pill.active-gnc { background: var(--shell-red); color: #fff; border-color: #ff3344; box-shadow: 0 0 10px rgba(229,18,37,0.4); }
-  .pill.active-liq { background: #d97706; color: #fff; border-color: #f59e0b; box-shadow: 0 0 10px rgba(217,119,6,0.4); }
-  .pill.active-teal { background: #0d9488; color: #fff; border-color: #14b8a6; box-shadow: 0 0 10px rgba(20,184,166,0.3); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* cards */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  .card-glow-blue { box-shadow: 0 0 0 1px rgba(59,130,246,.15), 0 4px 24px rgba(59,130,246,.06); }
+  .card-glow-orange { box-shadow: 0 0 0 1px rgba(249,115,22,.15), 0 4px 24px rgba(249,115,22,.06); }
+
+  /* pills */
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: .03em; cursor: pointer; transition: all .15s; border: 1px solid transparent; user-select: none; }
+  .pill-blue   { background: rgba(59,130,246,.12); color: #60a5fa; border-color: rgba(59,130,246,.25); }
+  .pill-blue.active, .pill-blue:hover { background: rgba(59,130,246,.28); border-color: #3b82f6; }
+  .pill-orange { background: rgba(249,115,22,.12); color: #fb923c; border-color: rgba(249,115,22,.25); }
+  .pill-orange.active, .pill-orange:hover { background: rgba(249,115,22,.28); border-color: #f97316; }
+  .pill-green  { background: rgba(34,197,94,.1);  color: #4ade80; border-color: rgba(34,197,94,.2); }
+  .pill-green.active, .pill-green:hover  { background: rgba(34,197,94,.25); border-color: #22c55e; }
+  .pill-purple { background: rgba(167,139,250,.1); color: #c084fc; border-color: rgba(167,139,250,.2); }
+  .pill-purple.active, .pill-purple:hover { background: rgba(167,139,250,.25); border-color: #a78bfa; }
+  .pill-gray   { background: rgba(100,116,139,.1); color: #94a3b8; border-color: rgba(100,116,139,.2); }
+  .pill-gray.active, .pill-gray:hover   { background: rgba(100,116,139,.25); border-color: #64748b; }
+  .pill-cyan   { background: rgba(34,211,238,.1);  color: #67e8f9; border-color: rgba(34,211,238,.2); }
+  .pill-cyan.active, .pill-cyan:hover   { background: rgba(34,211,238,.25); border-color: #22d3ee; }
+
+  /* module tabs */
+  .mod-tab { padding: 9px 20px; border-radius: 8px; font-size: 12px; font-weight: 600; letter-spacing: .04em; cursor: pointer; transition: all .2s; border: 1px solid transparent; }
+  .mod-tab.active-gnc    { background: var(--blue2); color: #fff; border-color: var(--blue); }
+  .mod-tab.active-liq    { background: #065f46; color: #6ee7b7; border-color: #059669; }
+  .mod-tab:not(.active-gnc):not(.active-liq) { background: var(--surface); color: var(--muted); border-color: var(--border); }
+  .mod-tab:not(.active-gnc):not(.active-liq):hover { border-color: var(--border2); color: var(--text); }
+
+  /* view tabs */
+  .view-tab { padding: 7px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+  .view-tab.active { background: rgba(59,130,246,.15); color: #60a5fa; border-color: rgba(59,130,246,.4); }
+  .view-tab:hover:not(.active) { border-color: var(--border2); color: var(--text); }
+
+  /* kpi cards */
+  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: border-color .2s; }
+  .kpi-card:hover { border-color: var(--border2); }
+  .kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -.5px; }
+  .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* alert */
+  .alert-box { background: rgba(249,115,22,.06); border: 1px solid rgba(249,115,22,.2); border-radius: 10px; padding: 10px 16px; }
+
+  /* table */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { font-size: 12px; padding: 8px 12px; border-bottom: 1px solid rgba(30,45,69,.5); white-space: nowrap; }
+  tr:hover td { background: rgba(59,130,246,.03); }
+  tr:last-child td { border-bottom: none; }
+
+  /* turno badges */
+  .t-m { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.2); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+  .t-t { background: rgba(249,115,22,.12); color: #fdba74; border: 1px solid rgba(249,115,22,.2); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+  .t-n { background: rgba(167,139,250,.12); color: #c4b5fd; border: 1px solid rgba(167,139,250,.2); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+
+  /* spinner */
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* dot live */
+  .dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+  /* rank bar */
+  .rank-bar { height: 5px; border-radius: 3px; transition: width .7s ease; }
+
+  /* section title */
+  .sec-title { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+  /* progress */
+  .prog-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .prog-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation: fadeUp .3s ease forwards; }
+
+  select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 5px 10px; font-size: 12px; font-family: 'Inter', sans-serif;
+    outline: none; cursor: pointer;
+  }
+  select:focus { border-color: var(--blue); }
+  option { background: var(--card); }
 </style>
 </head>
-<body class="min-h-screen p-4 md:p-6">
+<body>
 
-<div class="max-w-[1500px] mx-auto">
-
-  <!-- ENCABEZADO -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-gray-800 pb-5">
+<header style="background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50">
+  <div class="max-w-screen-2xl mx-auto px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
     <div class="flex items-center gap-3">
-      <div id="brandBadge" class="w-10 h-10 rounded-lg bg-amber-600/10 border border-amber-500/30 flex items-center justify-center font-black text-amber-400 text-sm tracking-tighter">SHELL</div>
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style="background:linear-gradient(135deg,#1d4ed8,#7c3aed)">ES</div>
       <div>
-        <h1 class="text-lg font-bold tracking-tight" id="lblMainHeading">Dashboard de Ventas · Líquidos y Shop</h1>
-        <p class="text-xs text-gray-400" id="lblUpdated">Sincronizando registros...</p>
+        <div class="font-semibold text-white text-sm leading-tight">Dashboard · Estación de Servicio</div>
+        <div class="text-xs" style="color:var(--muted)" id="headerSub">Cargando datos…</div>
       </div>
     </div>
-    <div class="flex items-center gap-4 text-xs">
-      <div class="flex items-center gap-2 text-gray-400"><span class="live-dot"></span> Filtro de Consistencia Activo</div>
-      <button id="btnRefresh" class="bg-gray-800 border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-md transition text-gray-200">Sincronizar Planilla</button>
+
+    <div class="flex items-center gap-2">
+      <button class="mod-tab active-gnc" id="btnGNC" onclick="switchModule('gnc')">⚡ CONTROL GNC</button>
+      <button class="mod-tab" id="btnLIQ" onclick="switchModule('liq')">💧 CONTROL LÍQUIDOS & SHOP</button>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 text-xs" style="color:var(--muted)">
+        <span class="dot-live"></span>
+        <span id="lastUpdate">—</span>
+      </div>
+      <button onclick="refresh()" class="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors" style="border-color:var(--border);color:var(--muted)" onmouseover="this.style.borderColor='var(--blue)';this.style.color='#60a5fa'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↻ Actualizar</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-screen-2xl mx-auto px-5 py-5">
+
+  <div class="flex items-center gap-2 mb-5">
+    <button class="view-tab active" id="tabMes" onclick="switchView('mes')">📅 Mes en Curso</button>
+    <button class="view-tab" id="tabHist" onclick="switchView('hist')">📊 Historial</button>
+    <div class="ml-auto flex items-center gap-2" id="loadingIndicator" style="display:none!important">
+      <div class="spinner"></div>
+      <span class="text-xs" style="color:var(--muted)">Cargando…</span>
     </div>
   </div>
 
-  <!-- BARRA DE FILTROS -->
-  <div class="card p-4 mb-6 space-y-3">
-    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-      <span class="text-xs font-semibold text-gray-400 w-24">PERÍODO / MES:</span>
-      <div id="filterMonths" class="flex flex-wrap gap-1.5"></div>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <span class="text-xs font-semibold text-gray-400 w-24">TURNO:</span>
-      <div id="filterTurns" class="flex flex-wrap gap-1.5">
-        <button class="pill px-3 py-1 rounded-full active-liq" data-turn="Todos">Todos</button>
-        <button class="pill px-3 py-1 rounded-full" data-turn="MAÑANA">Mañana</button>
-        <button class="pill px-3 py-1 rounded-full" data-turn="TARDE">Tarde</button>
-        <button class="pill px-3 py-1 rounded-full" data-turn="NOCHE">Noche</button>
+  <div id="alertBanner" class="alert-box mb-4 hidden">
+    <div class="flex items-start gap-2">
+      <span class="text-orange-400 text-sm mt-px">⚠</span>
+      <div>
+        <span class="text-xs font-semibold text-orange-300" id="alertTitle"></span>
+        <span class="text-xs text-orange-200/70 ml-1" id="alertBody"></span>
       </div>
     </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <span class="text-xs font-semibold text-gray-400 w-24">PLAYERO:</span>
-      <div id="filterWorkers" class="flex flex-wrap gap-1.5">
-        <button class="pill px-3 py-1 rounded-full active-teal" data-worker="Todos">Todos</button>
+  </div>
+
+  <div id="viewMes" class="fade-up">
+
+    <div class="flex flex-wrap items-center gap-3 mb-5 p-3 card">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-medium" style="color:var(--muted)">TURNO</span>
+        <div class="flex gap-1.5" id="filterTurno">
+          <span class="pill pill-cyan active" data-val="" onclick="setFilter('turno','',this)">Todos</span>
+          <span class="pill pill-blue" data-val="MAÑANA" onclick="setFilter('turno','MAÑANA',this)">Mañana</span>
+          <span class="pill pill-orange" data-val="TARDE" onclick="setFilter('turno','TARDE',this)">Tarde</span>
+          <span class="pill pill-purple" data-val="NOCHE" onclick="setFilter('turno','NOCHE',this)">Noche</span>
+        </div>
+      </div>
+      <div class="w-px h-5" style="background:var(--border)"></div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-medium" style="color:var(--muted)">PLAYERO</span>
+        <select id="filterPlayero" onchange="applyMesFilters()" style="font-size:11px;padding:4px 8px">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="ml-auto text-xs mono" style="color:var(--muted)" id="mesInfo"></div>
+    </div>
+
+    <div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div class="card p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <div class="font-semibold text-sm text-white" id="chartDailyTitle">Tendencia Diaria</div>
+            <div class="text-xs mt-0.5" style="color:var(--muted)">Solo días completamente cerrados (3 turnos)</div>
+          </div>
+          <div class="flex gap-2 flex-wrap" id="dailyLegend"></div>
+        </div>
+        <div style="position:relative;height:220px"><canvas id="chartDaily"></canvas></div>
+      </div>
+
+      <div class="card p-5">
+        <div class="sec-title" id="rankTitle">Ranking de Playeros</div>
+        <div id="rankingList" class="space-y-3 overflow-y-auto" style="max-height:260px"></div>
       </div>
     </div>
-  </div>
 
-  <!-- METRICAS -->
-  <div id="metricsGrid" class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6"></div>
-
-  <!-- AVISO AUDITORIA -->
-  <div class="card p-3 border-yellow-500/20 bg-yellow-500/5 mb-6 text-xs flex items-center gap-2 text-gray-300">
-    <span>🛡️</span>
-    <p id="lblAlert">Procesando matriz de datos...</p>
-  </div>
-
-  <!-- GRAFICOS FILA 1 -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    <div class="card p-4 lg:col-span-2">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300" id="lblChartMainTitle">Evolución</h3>
-        <span class="text-[10px] bg-gray-800 text-yellow-400 px-2 py-0.5 rounded-full">AUDITADO</span>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="card p-5">
+        <div class="sec-title">Distribución por Turno</div>
+        <div style="position:relative;height:180px"><canvas id="chartTurno"></canvas></div>
+        <div id="turnoLegend" class="mt-3 space-y-1.5"></div>
       </div>
-      <div class="h-64"><canvas id="chartMain"></canvas></div>
+      <div class="card p-5" id="chartExtra1Wrap">
+        <div class="sec-title" id="chartExtra1Title">Aceite Suelto por Turno</div>
+        <div style="position:relative;height:200px"><canvas id="chartExtra1"></canvas></div>
+      </div>
+      <div class="card p-5" id="chartExtra2Wrap">
+        <div class="sec-title" id="chartExtra2Title">GNC Regalado / Extras</div>
+        <div style="position:relative;height:200px"><canvas id="chartExtra2"></canvas></div>
+      </div>
     </div>
-    <div class="card p-4">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4">Distribución por Turno</h3>
-      <div class="h-64"><canvas id="chartTurns"></canvas></div>
-    </div>
-  </div>
 
-  <!-- GRAFICOS FILA 2 -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="card p-4 lg:col-span-2">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblRankingTitle">Performance</h3>
-      <div class="h-64"><canvas id="chartRanking"></canvas></div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold text-sm text-white">Detalle por Jornada</div>
+        <span class="text-xs mono" style="color:var(--muted)" id="tableCount"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
+      </div>
     </div>
-    <div class="card p-4">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-gray-300 mb-4" id="lblChartSecTitle">Ventas</h3>
-      <div class="h-64"><canvas id="chartSecondary"></canvas></div>
-    </div>
-  </div>
+  </div><div id="viewHist" class="hidden fade-up">
 
-</div>
+    <div class="card p-4 mb-5">
+      <div class="flex flex-wrap items-center gap-3 mb-3">
+        <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Período</span>
+        <div class="flex flex-wrap gap-1.5" id="histMesPills"></div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3" id="histSecondaryFilters" style="display:none!important">
+        <div class="w-px h-5" style="background:var(--border)"></div>
+        <span class="text-xs font-medium" style="color:var(--muted)">TURNO</span>
+        <div class="flex gap-1.5" id="histFilterTurno">
+          <span class="pill pill-cyan active" data-val="" onclick="setHistFilter('turno','',this)">Todos</span>
+          <span class="pill pill-blue" data-val="MAÑANA" onclick="setHistFilter('turno','MAÑANA',this)">Mañana</span>
+          <span class="pill pill-orange" data-val="TARDE" onclick="setHistFilter('turno','TARDE',this)">Tarde</span>
+          <span class="pill pill-purple" data-val="NOCHE" onclick="setHistFilter('turno','NOCHE',this)">Noche</span>
+        </div>
+        <div class="w-px h-5" style="background:var(--border)"></div>
+        <span class="text-xs font-medium" style="color:var(--muted)">PLAYERO</span>
+        <select id="histFilterPlayero" onchange="renderHist()" style="font-size:11px;padding:4px 8px">
+          <option value="">Todos</option>
+        </select>
+        <div class="ml-auto text-xs mono" style="color:var(--muted)" id="histInfo"></div>
+      </div>
+    </div>
+
+    <div id="histKpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div class="card p-5 lg:col-span-2">
+        <div class="font-semibold text-sm text-white mb-1">Evolución Mensual</div>
+        <div class="text-xs mb-4" style="color:var(--muted)">Acumulado por mes en el período seleccionado</div>
+        <div style="position:relative;height:210px"><canvas id="histChartMensual"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <div class="sec-title">Ranking Histórico</div>
+        <div id="histRankingList" class="space-y-3 overflow-y-auto" style="max-height:260px"></div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div class="card p-5">
+        <div class="sec-title">Comparativa por Turno</div>
+        <div style="position:relative;height:190px"><canvas id="histChartTurno"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <div class="sec-title" id="histExtra1Title">Distribución Auxiliar</div>
+        <div style="position:relative;height:190px"><canvas id="histChartExtra"></canvas></div>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold text-sm text-white">Detalle Histórico</div>
+        <span class="text-xs mono" style="color:var(--muted)" id="histTableCount"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table><thead id="histTableHead"></thead><tbody id="histTableBody"></tbody></table>
+      </div>
+    </div>
+  </div></main>
 
 <script>
+// ═══ CONSTANTS ═══
 const BASE_URL = "https://docs.google.com/spreadsheets/d/1Mi9g0qnBZRj70IdQl_6M1JxjMGRnyw1wOCh56D7cv64/gviz/tq?tqx=out:csv";
-const URL_LIQ = BASE_URL + "&sheet=Hoja%202%20liq";
+const URL_GNC  = BASE_URL + "&sheet=Hoja%201";
+const URL_LIQ  = BASE_URL + "&sheet=Hoja%202%20liq";
 
-let rawLiqData = [];
-let activeFilters = { month: 'CURSO', turn: 'Todos', worker: 'Todos' };
-let charts = {};
-let currentMonthLabelGlobal = "";
+// ═══ STATE ═══
+let MODULE  = 'gnc'; // 'gnc' | 'liq'
+let VIEW    = 'mes'; // 'mes' | 'hist'
+let RAW     = [];    // all parsed rows
 
-const COLORS = {
-  orange: '#ea580c', yellow: '#fecb00', teal: '#0d9488',
-  chartSet: ['#f59e0b', '#fecb00', '#10b981', '#8b5cf6', '#06b6d4', '#ea580c', '#14b8a6']
+const filters = { turno: '', playero: '' };
+const histFilters = { mes: '__all__', turno: '', playero: '' };
+
+const CHARTS = {}; // chart registry
+
+// ═══ HELPERS ═══
+function N(v) {
+  if (v === null || v === undefined) return 0;
+  const s = String(v).replace(/\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.');
+  return parseFloat(s) || 0;
+}
+function fmt(n, dec=0) {
+  return (isNaN(n)?0:n).toLocaleString('es-AR',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtPesos(n) { return '$\u00a0' + fmt(Math.round(n)); }
+function fmtM3(n)    { return fmt(n) + ' m³'; }
+
+const MN = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function parseRowDate(s) {
+  if (!s) return null;
+  s = s.trim();
+  // DD-MM-YYYY or DD/MM/YYYY
+  const m1 = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+  if (m1) return new Date(+m1[3], +m1[2]-1, +m1[1]);
+  // YYYY-MM-DD
+  const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m2) return new Date(+m2[1], +m2[2]-1, +m2[3]);
+  return null;
+}
+function dateKey(d) {
+  if (!d) return '';
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function monthKey(d) {
+  if (!d) return '';
+  return MN[d.getMonth()+1] + ' ' + String(d.getFullYear()).slice(2);
+}
+function turnoNorm(t) {
+  if (!t) return '';
+  const u = t.toUpperCase().trim();
+  if (u.includes('MA') || u.includes('MN')) return 'MAÑANA';
+  if (u.includes('TA') || u.includes('TD')) return 'TARDE';
+  if (u.includes('NO') || u.includes('NC')) return 'NOCHE';
+  return u;
+}
+function turnoClass(t) {
+  if (t==='MAÑANA') return 't-m';
+  if (t==='TARDE')  return 't-t';
+  return 't-n';
+}
+function today() { const d=new Date(); d.setHours(0,0,0,0); return d; }
+
+function destroyChart(key) {
+  if (CHARTS[key]) { try { CHARTS[key].destroy(); } catch(e){} delete CHARTS[key]; }
+}
+
+// ═══ CSV PARSER ═══
+function parseCSV(txt) {
+  const lines = txt.trim().split('\n');
+  const headers = splitCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line => {
+    const vals = splitCSVLine(line);
+    const row = {};
+    headers.forEach((h,i) => { row[i] = (vals[i]||'').trim().replace(/^"|"$/g,''); row[h] = row[i]; });
+    return row;
+  });
+}
+function splitCSVLine(line) {
+  const r=[]; let cur='', inQ=false;
+  for (const c of line) {
+    if (c==='"') { inQ=!inQ; }
+    else if (c===',' && !inQ) { r.push(cur); cur=''; }
+    else { cur+=c; }
+  }
+  r.push(cur);
+  return r;
+}
+
+// ═══ DATA LOADING ═══
+async function loadData(url) {
+  const res = await fetch(url + '&nocache=' + Date.now());
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.text();
+}
+
+function parseGNC(rows) {
+  return rows.map(r => {
+    const d = parseRowDate(r[0]);
+    if (!d || !r[1]) return null;
+    const turno = turnoNorm(r[1]);
+    if (!turno) return null;
+    return {
+      date:    d,
+      dateKey: dateKey(d),
+      monthKey: monthKey(d),
+      turno,
+      playero: (r[2]||'').trim(),
+      gnc:     N(r[3]),
+      efGNC:   N(r[4]),
+      aceites: N(r[5]),
+      varios:  N(r[6]),
+      extraGNC:N(r[7]),
+      regPesos:N(r[12]),
+      regMts:  N(r[13]),
+      acSuelto:N(r[11]),
+    };
+  }).filter(Boolean);
+}
+
+function parseLIQ(rows) {
+  return rows.map(r => {
+    const d = parseRowDate(r[0]);
+    if (!d || !r[1]) return null;
+    const turno = turnoNorm(r[1]);
+    if (!turno) return null;
+    return {
+      date:    d,
+      dateKey: dateKey(d),
+      monthKey: monthKey(d),
+      turno,
+      playero:  (r[2]||'').trim(),
+      playero2: (r[3]||'').trim(),
+      heladera: N(r[4]),
+      varios:   N(r[5]),
+      acLts:    N(r[6]),
+      liqTotal: N(r[14]),
+      // additional cols for later
+      recaudado:N(r[11]),
+    };
+  }).filter(Boolean);
+}
+
+// ═══ CLOSED DAYS LOGIC ═══
+// A day is "closed" if it has MAÑANA + TARDE + NOCHE all present
+function closedDays(rows) {
+  const map = {};
+  rows.forEach(r => {
+    if (!map[r.dateKey]) map[r.dateKey] = new Set();
+    map[r.dateKey].add(r.turno);
+  });
+  const closed = new Set();
+  Object.entries(map).forEach(([dk, turnos]) => {
+    if (turnos.has('MAÑANA') && turnos.has('TARDE') && turnos.has('NOCHE')) closed.add(dk);
+  });
+  return closed;
+}
+
+// Current month: rows from current month only, closed days only
+function getCurrentMonthRows(rows) {
+  const t = today();
+  const curY = t.getFullYear();
+  const curM = t.getMonth();
+  const thisMonth = rows.filter(r => r.date.getFullYear()===curY && r.date.getMonth()===curM);
+  const closed = closedDays(thisMonth);
+  return thisMonth.filter(r => closed.has(r.dateKey));
+}
+
+// Historical: everything EXCEPT current month
+function getHistRows(rows) {
+  const t = today();
+  const curY = t.getFullYear();
+  const curM = t.getMonth();
+  return rows.filter(r => !(r.date.getFullYear()===curY && r.date.getMonth()===curM));
+}
+
+// ═══ PRORATING LOGIC ═══
+// Build a map of dateKey+turno → unique playeros count, for equitable distribution
+function buildProrateMap(rows) {
+  const map = {};
+  rows.forEach(r => {
+    const k = r.dateKey + '|' + r.turno;
+    if (!map[k]) map[k] = new Set();
+    if (r.playero)  map[k].add(r.playero);
+    if (r.playero2) map[k].add(r.playero2);
+  });
+  const result = {};
+  Object.entries(map).forEach(([k,s]) => { result[k] = Math.max(1, s.size); });
+  return result;
+}
+
+function prorateShare(row, prorateMap) {
+  const k = row.dateKey + '|' + row.turno;
+  return prorateMap[k] || 1;
+}
+
+// ═══ AGGREGATION ═══
+function aggregate(rows, filterFn) {
+  const filtered = rows.filter(filterFn || (()=>true));
+  const pm = buildProrateMap(rows); // use full rows for prorating
+
+  const totals = { gnc:0, efGNC:0, aceites:0, varios:0, extraGNC:0, regPesos:0, regMts:0, acSuelto:0,
+                   heladera:0, liqTotal:0, acLts:0 };
+  filtered.forEach(r => {
+    const share = prorateShare(r, pm);
+    totals.gnc      += r.gnc || 0;
+    totals.efGNC    += r.efGNC || 0;
+    totals.aceites  += r.aceites || 0;
+    totals.varios   += r.varios || 0;
+    totals.extraGNC += r.extraGNC || 0;
+    totals.regPesos += r.regPesos || 0;
+    totals.regMts   += r.regMts || 0;
+    totals.acSuelto += r.acSuelto || 0;
+    totals.heladera += r.heladera || 0;
+    totals.liqTotal += r.liqTotal || 0;
+    totals.acLts    += r.acLts || 0;
+  });
+  return { totals, filtered, count: filtered.length };
+}
+
+// Ranking: prorated per playero
+function buildRanking(rows) {
+  const pm = buildProrateMap(rows);
+  const map = {};
+  rows.forEach(r => {
+    const share = prorateShare(r, pm);
+    const players = [r.playero, r.playero2].filter(Boolean);
+    if (!players.length) players.push('(sin nombre)');
+    players.forEach(p => {
+      if (!map[p]) map[p] = { gnc:0, acSuelto:0, acLts:0, heladera:0, liqTotal:0, turnos:0 };
+      map[p].gnc      += (r.gnc||0)      / share;
+      map[p].acSuelto += (r.acSuelto||0) / share;
+      map[p].acLts    += (r.acLts||0)    / share;
+      map[p].heladera += (r.heladera||0) / share;
+      map[p].liqTotal += (r.liqTotal||0) / share;
+      map[p].turnos   += 1/share;
+    });
+  });
+  return Object.entries(map)
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a,b) => (MODULE==='gnc' ? b.gnc - a.gnc : b.liqTotal - a.liqTotal));
+}
+
+// ═══ MODULE SWITCH ═══
+function switchModule(mod) {
+  MODULE = mod;
+  document.getElementById('btnGNC').className = 'mod-tab' + (mod==='gnc' ? ' active-gnc' : '');
+  document.getElementById('btnLIQ').className = 'mod-tab' + (mod==='liq' ? ' active-liq' : '');
+  refresh();
+}
+
+// ═══ VIEW SWITCH ═══
+function switchView(v) {
+  VIEW = v;
+  document.getElementById('tabMes').classList.toggle('active', v==='mes');
+  document.getElementById('tabHist').classList.toggle('active', v==='hist');
+  document.getElementById('viewMes').classList.toggle('hidden', v!=='mes');
+  document.getElementById('viewHist').classList.toggle('hidden', v!=='hist');
+  if (RAW.length) { v==='mes' ? renderMes() : renderHist(); }
+}
+
+// ═══ FILTERS ═══
+function setFilter(type, val, el) {
+  filters[type] = val;
+  const parent = el.closest('[id^=filter]');
+  parent.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderMes();
+}
+function setHistFilter(type, val, el) {
+  histFilters[type] = val;
+  const parent = el.closest('[id^=histFilter]');
+  parent.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderHist();
+}
+function applyMesFilters() {
+  filters.playero = document.getElementById('filterPlayero').value;
+  renderMes();
+}
+
+function buildPlayeroSelect(rows, selId) {
+  const players = [...new Set(rows.map(r => r.playero).filter(Boolean))].sort();
+  const sel = document.getElementById(selId);
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + players.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if (prev && players.includes(prev)) sel.value = prev;
+}
+
+// ═══ CHART HELPERS ═══
+const CH_DEFAULTS = {
+  plugins: { legend: { display: false }, tooltip: {
+    backgroundColor: '#0f1a2e', borderColor: '#1e2d45', borderWidth: 1,
+    titleColor: '#e2e8f0', bodyColor: '#94a3b8', padding: 10,
+    callbacks: {}
+  }},
+  scales: {
+    x: { ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 40, autoSkip: true }, grid: { color: 'rgba(255,255,255,.04)' } },
+    y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.06)' } }
+  },
+  responsive: true, maintainAspectRatio: false, animation: { duration: 400 }
 };
 
-async function init() {
-  setupEventListeners();
-  await fetchData();
+function mkChart(key, el, cfg) {
+  destroyChart(key);
+  CHARTS[key] = new Chart(document.getElementById(el), cfg);
+  return CHARTS[key];
 }
 
-async function fetchData() {
-  try {
-    const resLiq = await fetch(URL_LIQ + "&cb=" + Date.now()).then(r => r.text());
-    rawLiqData = Papa.parse(resLiq.trim(), { skipEmptyLines: true }).data;
+// ═══ RENDER MES ═══
+function renderMes() {
+  if (!RAW.length) return;
+  const curRows = getCurrentMonthRows(RAW);
+  buildPlayeroSelect(curRows, 'filterPlayero');
 
-    // Remover fila de encabezados si existe texto en lugar de fecha
-    if (rawLiqData.length && isNaN(parseRowDate(rawLiqData[0][0]).getTime())) {
-      rawLiqData.shift(); 
-    }
+  const filterFn = r =>
+    (!filters.turno   || r.turno===filters.turno) &&
+    (!filters.playero || r.playero===filters.playero || r.playero2===filters.playero);
 
-    buildMonthFilters();
-    updateDashboard();
-    
-    const now = new Date();
-    document.getElementById('lblUpdated').textContent = `Última sincronización: ${now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}`;
-  } catch (err) {
-    console.error("Error cargando datos:", err);
-  }
-}
+  const { totals, filtered } = aggregate(curRows, filterFn);
 
-function parseRowDate(str) {
-  if (!str) return new Date(NaN);
-  const cleanStr = str.trim().replace(/["']/g, '');
-  const parts = cleanStr.split(/[\/\-]/);
-  
-  if (parts.length === 3) {
-    let day, month, year;
-    if (parts[0].length === 4) {
-      year = parseInt(parts[0], 10);
-      month = parseInt(parts[1], 10) - 1;
-      day = parseInt(parts[2], 10);
-    } else {
-      day = parseInt(parts[0], 10);
-      month = parseInt(parts[1], 10) - 1;
-      year = parseInt(parts[2], 10);
-      if (year < 100) year += 2000;
-    }
-    return new Date(year, month, day);
-  }
-  return new Date(NaN);
-}
+  const dias = [...new Set(curRows.map(r=>r.dateKey))].length;
+  const diasFilt = [...new Set(filtered.map(r=>r.dateKey))].length;
 
-// LIMPIEZA MATEMÁTICA: Remueve de raíz los textos "Lt", "Lts" o "$"
-function num(v) {
-  if (!v) return 0;
-  const cleanStr = String(v)
-    .replace(/[^\d.,-]/g, "") 
-    .replace(",", ".");       
-  const n = parseFloat(cleanStr);
-  return isNaN(n) ? 0 : n;
-}
+  // Module-specific info text
+  const t = today();
+  document.getElementById('mesInfo').textContent =
+    `${MN[t.getMonth()+1]} ${t.getFullYear()} · ${dias} días cerrados · ${filtered.length} registros`;
 
-function getClosedDaysMap(dataSrc) {
-  const dayTurns = {};
-  dataSrc.forEach(r => {
-    if (!r[0] || !r[1]) return;
-    const f = r[0].trim();
-    const t = r[1].toUpperCase().trim();
-    if (t==='MAÑANA' || t==='TARDE' || t==='NOCHE') {
-      if (!dayTurns[f]) dayTurns[f] = new Set();
-      dayTurns[f].add(t);
-    }
-  });
-  const closedMap = {};
-  for (const date in dayTurns) {
-    closedMap[date] = true;
-  }
-  return closedMap;
-}
+  // ── KPIs ──
+  renderKPIs('kpiGrid', totals, diasFilt, curRows.length);
 
-function getProrrateoMap(dataSrc, closedMap) {
-  const prorrateo = {};
-  dataSrc.forEach(r => {
-    if (!r[0] || !r[1] || !r[2]) return;
-    const f = r[0].trim();
-    if (!closedMap[f]) return; 
-    const t = r[1].toUpperCase().trim();
-    const p = r[2].trim();
-    if (p !== "") {
-      const key = `${f}_${t}`;
-      if (!prorrateo[key]) prorrateo[key] = new Set();
-      prorrateo[key].add(p);
-    }
-  });
-  return prorrateo;
-}
-
-function buildMonthFilters() {
-  const monthsDiv = document.getElementById('filterMonths');
-  monthsDiv.innerHTML = '';
-  
-  const closedMap = getClosedDaysMap(rawLiqData);
-  const uniqueMonths = new Set();
-  let latestDate = null;
-  
-  rawLiqData.forEach(r => {
-    if (!r[0]) return;
-    const d = parseRowDate(r[0]);
-    if (!isNaN(d.getTime()) && closedMap[r[0].trim()]) {
-      if (d.getFullYear() < 2026 || (d.getFullYear() === 2026 && d.getMonth() < 4)) return;
-      let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
-      uniqueMonths.add(label);
-      if (!latestDate || d > latestDate) latestDate = d;
-    }
-  });
-
-  if (latestDate) {
-    currentMonthLabelGlobal = latestDate.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
+  // ── Alert: partial day ──
+  const allForMonth = RAW.filter(r => r.date.getFullYear()===t.getFullYear() && r.date.getMonth()===t.getMonth());
+  const closedSet = closedDays(allForMonth);
+  const todayKey = dateKey(t);
+  const todayRows = allForMonth.filter(r=>r.dateKey===todayKey);
+  const ab = document.getElementById('alertBanner');
+  if (todayRows.length && !closedSet.has(todayKey)) {
+    ab.classList.remove('hidden');
+    const turnos = [...new Set(todayRows.map(r=>r.turno))].join(', ');
+    document.getElementById('alertTitle').textContent = `Día en curso (${todayKey}):`;
+    document.getElementById('alertBody').textContent =
+      `datos parciales excluidos del análisis. Turno${todayRows.length>1?'s':''} cargado${todayRows.length>1?'s':''}: ${turnos}. Se incluirá al cerrar el turno NOCHE.`;
   } else {
-    currentMonthLabelGlobal = "JUL 26";
+    ab.classList.add('hidden');
   }
 
-  const activeClass = 'active-liq';
+  // ── Daily chart ──
+  renderDailyChart(curRows, filterFn);
 
-  const btnCurso = document.createElement('button');
-  btnCurso.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'CURSO' ? activeClass : ''}`;
-  btnCurso.textContent = `MES EN CURSO (${currentMonthLabelGlobal})`;
-  btnCurso.onclick = () => { selectFilter('month', 'CURSO'); };
-  monthsDiv.appendChild(btnCurso);
+  // ── Ranking ──
+  renderRanking('rankingList', curRows.filter(filterFn));
 
-  const btnAll = document.createElement('button');
-  btnAll.className = `pill px-3 py-1 rounded-full ${activeFilters.month === 'TODOS' ? activeClass : ''}`;
-  btnAll.textContent = "HISTORIAL (POST MAYO 2026)";
-  btnAll.onclick = () => { selectFilter('month', 'TODOS'); };
-  monthsDiv.appendChild(btnAll);
+  // ── Turno donut ──
+  renderTurnoDonut('chartTurno', 'turnoLegend', curRows.filter(filterFn));
 
-  Array.from(uniqueMonths).sort((a,b) => b.localeCompare(a)).forEach(m => {
-    const btn = document.createElement('button');
-    btn.className = `pill px-3 py-1 rounded-full ${activeFilters.month === m ? activeClass : ''}`;
-    btn.textContent = m;
-    btn.onclick = () => { selectFilter('month', m); };
-    monthsDiv.appendChild(btn);
-  });
+  // ── Extra charts ──
+  renderExtraCharts(curRows.filter(filterFn));
+
+  // ── Table ──
+  renderTable(filtered);
 }
 
-function buildWorkerFilters(filteredRows) {
-  const workersDiv = document.getElementById('filterWorkers');
-  const currentSelection = activeFilters.worker;
-  workersDiv.innerHTML = '';
-
-  const workers = new Set();
-  filteredRows.forEach(r => {
-    if (r[2] && r[2].trim()) workers.add(r[2].trim());
-  });
-
-  const btnAll = document.createElement('button');
-  btnAll.className = `pill px-3 py-1 rounded-full ${currentSelection === 'Todos' ? 'active-teal' : ''}`;
-  btnAll.textContent = "Todos";
-  btnAll.onclick = () => { selectFilter('worker', 'Todos'); };
-  workersDiv.appendChild(btnAll);
-
-  Array.from(workers).sort().forEach(w => {
-    const btn = document.createElement('button');
-    btn.className = `pill px-3 py-1 rounded-full ${currentSelection === w ? 'active-teal' : ''}`;
-    btn.textContent = w;
-    btn.onclick = () => { selectFilter('worker', w); };
-    workersDiv.appendChild(btn);
-  });
-}
-
-function selectFilter(type, value) {
-  activeFilters[type] = value;
-  if (type === 'month') buildMonthFilters();
-  if (type === 'turn') {
-    document.querySelectorAll('#filterTurns .pill').forEach(b => {
-      b.classList.toggle('active-liq', b.getAttribute('data-turn') === value);
-    });
-  }
-  updateDashboard();
-}
-
-function updateDashboard() {
-  const closedMap = getClosedDaysMap(rawLiqData);
-  const prorrateoMap = getProrrateoMap(rawLiqData, closedMap);
-
-  let baseRows = rawLiqData.filter(r => {
-    if (!r[0] || !r[1] || String(r[0]).trim() === "") return false; // Salteo automático de baches vacíos (ej: 03-07)
-    const f = r[0].trim();
-    
-    const d = parseRowDate(f);
-    if (isNaN(d.getTime())) return false;
-    if (d.getFullYear() < 2026 || (d.getFullYear() === 2026 && d.getMonth() < 4)) return false;
-    
-    if (activeFilters.month === 'TODOS') return true;
-    let label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }).replace('.', '').trim().toUpperCase();
-    if (activeFilters.month === 'CURSO') return label === currentMonthLabelGlobal;
-    return label === activeFilters.month.toUpperCase();
-  });
-
-  buildWorkerFilters(baseRows);
-
-  let displayRows = baseRows;
-  if (activeFilters.turn !== 'Todos') {
-    displayRows = displayRows.filter(r => r[1] && r[1].toUpperCase().trim() === activeFilters.turn.toUpperCase());
+function renderKPIs(gridId, totals, dias, total) {
+  const grid = document.getElementById(gridId);
+  let cards = [];
+  if (MODULE === 'gnc') {
+    cards = [
+      { label:'m³ GNC Acumulado',    val: fmtM3(totals.gnc),       sub: `Prom ${fmtM3(dias?Math.round(totals.gnc/dias):0)}/día`,  color:'#3b82f6', prog: totals.gnc },
+      { label:'Aceite Suelto',        val: fmt(totals.acSuelto,1)+' L', sub: 'litros de aceite suelto', color:'#22c55e', prog: totals.acSuelto },
+      { label:'GNC Regalado $',       val: fmtPesos(totals.regPesos), sub: fmt(totals.regMts)+' m³ en cortesías', color:'#f97316', prog: totals.regPesos },
+      { label:'Extra GNC / Varios',   val: fmtPesos(totals.extraGNC+totals.varios), sub: fmtPesos(totals.efGNC)+' efectivo GNC', color:'#a78bfa', prog: totals.extraGNC },
+    ];
+  } else {
+    cards = [
+      { label:'Total Liq. (Lts)',  val: fmt(totals.liqTotal,1)+' L', sub: `Prom ${fmt(dias?totals.liqTotal/dias:0,1)} L/día`, color:'#22d3ee', prog: totals.liqTotal },
+      { label:'Aceite / Lubric.',  val: fmt(totals.acLts,1)+' L',   sub: 'litros de lubricantes', color:'#22c55e', prog: totals.acLts },
+      { label:'Ventas Heladera',   val: fmtPesos(totals.heladera),  sub: `${dias} días cerrados`, color:'#f97316', prog: totals.heladera },
+      { label:'Ventas Varios',     val: fmtPesos(totals.varios),    sub: 'acumulado período',   color:'#a78bfa', prog: totals.varios },
+    ];
   }
 
-  const modoTexto = activeFilters.month === 'CURSO' ? `MES EN CURSO (${currentMonthLabelGlobal})` : (activeFilters.month === 'TODOS' ? 'HISTORIAL CONSOLIDADO' : `PERÍODO ${activeFilters.month}`);
-  document.getElementById('lblAlert').textContent = `Auditoría Interna Shell: ${modoTexto} | Mapeo indexado por posición de celda activo.`;
-
-  renderLiquidosDashboard(displayRows, prorrateoMap);
+  const maxProg = Math.max(...cards.map(c=>c.prog), 1);
+  grid.innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-val" style="color:${c.color}">${c.val}</div>
+      <div class="kpi-sub">${c.sub}</div>
+      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,Math.round(c.prog/maxProg*100))}%;background:${c.color}"></div></div>
+    </div>`).join('');
 }
 
-function renderLiquidosDashboard(displayRows, prorrateoMap) {
-  let totalLitros = 0, heladera = 0, varios = 0, aceite = 0;
-  const uniqueDays = new Set();
+function renderDailyChart(rows, filterFn) {
+  const filtered = rows.filter(filterFn);
+  const dm = {}, dm2 = {};
+  filtered.forEach(r => {
+    dm[r.dateKey]  = (dm[r.dateKey]||0)  + (MODULE==='gnc' ? r.gnc : r.liqTotal);
+    dm2[r.dateKey] = (dm2[r.dateKey]||0) + (MODULE==='gnc' ? r.regPesos : r.acLts);
+  });
+  const keys = Object.keys(dm).sort();
+  const labels = keys.map(k => k.slice(5));
+  const vals   = keys.map(k=>dm[k]);
+  const vals2  = keys.map(k=>dm2[k]);
 
-  displayRows.forEach(r => {
-    const f = r[0].trim();
-    const t = r[1].toUpperCase().trim();
-    const p = r[2].trim();
-    const key = `${f}_${t}`;
-    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+  // Trend line
+  let trend = vals.map(()=>null);
+  if (vals.length > 1) {
+    const n=vals.length, xs=vals.map((_,i)=>i);
+    const xm=xs.reduce((a,b)=>a+b,0)/n, ym=vals.reduce((a,b)=>a+b,0)/n;
+    const den=xs.reduce((s,x)=>s+(x-xm)**2,0)||1;
+    const sl=xs.reduce((s,x,i)=>s+(x-xm)*(vals[i]-ym),0)/den;
+    const ic=ym-sl*xm;
+    trend = xs.map(x=>Math.max(0,Math.round(ic+sl*x)));
+  }
 
-    if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
-    const factor = (activeFilters.worker !== 'Todos') ? (1 / numPlayerosEnTurno) : 1;
+  const mainColor = MODULE==='gnc' ? '#3b82f6' : '#22d3ee';
+  const mainLabel = MODULE==='gnc' ? 'm³ GNC' : 'Lts';
+  const aux2Label = MODULE==='gnc' ? 'Regalado $' : 'Aceite Lts';
+  const aux2Color = MODULE==='gnc' ? '#f97316' : '#22c55e';
 
-    if (activeFilters.worker !== 'Todos') {
-      heladera += num(r[4]) * factor; // Columna E (Heladera)
-      varios += num(r[5]) * factor;   // Columna F (Varios)
-      aceite += num(r[6]) * factor;   // Columna G (Lubricantes LTS)
-      totalLitros += num(r[11]) * factor; // Columna L (Total Litros/Venta Turno)
+  document.getElementById('chartDailyTitle').textContent =
+    MODULE==='gnc' ? 'Tendencia Diaria — m³ GNC' : 'Tendencia Diaria — Litros Combustible';
+
+  const legendEl = document.getElementById('dailyLegend');
+  legendEl.innerHTML = [
+    `<span class="pill pill-blue">${mainLabel}</span>`,
+    `<span class="pill pill-gray">Tendencia</span>`,
+    `<span class="pill pill-orange">${aux2Label}</span>`,
+  ].join('');
+
+  mkChart('daily','chartDaily',{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:mainLabel,data:vals,backgroundColor:mainColor+'99',hoverBackgroundColor:mainColor,borderRadius:4,borderSkipped:false,order:2},
+      {label:'Tendencia',data:trend,type:'line',borderColor:'rgba(99,102,241,.65)',borderWidth:2,borderDash:[5,4],pointRadius:0,fill:false,tension:0,order:1},
+      {label:aux2Label,data:vals2,type:'line',borderColor:aux2Color,borderWidth:1.5,pointRadius:2,pointBackgroundColor:aux2Color,fill:false,tension:.3,order:1,yAxisID:'y2'}
+    ]},
+    options:{...CH_DEFAULTS,
+      plugins:{...CH_DEFAULTS.plugins,legend:{display:false},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{
+          label:c=>c.datasetIndex===2?` ${aux2Label}: ${MODULE==='gnc'?fmtPesos(c.parsed.y):fmt(c.parsed.y,1)+' L'}`:` ${c.parsed.y?.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`
+        }}
+      },
+      scales:{...CH_DEFAULTS.scales,
+        y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}},
+        y2:{position:'right',ticks:{color:aux2Color,font:{size:9},callback:v=>MODULE==='gnc'?'$'+Math.round(v/1000)+'k':v.toFixed(0)+'L'},grid:{display:false}}
+      }
     }
-    uniqueDays.add(f);
+  });
+}
+
+function renderRanking(elId, rows) {
+  const ranking = buildRanking(rows);
+  const max = ranking[0] ? (MODULE==='gnc' ? ranking[0].gnc : ranking[0].liqTotal) : 1;
+  const colors = ['#3b82f6','#6366f1','#8b5cf6','#a78bfa','#c084fc','#ddd6fe'];
+  const el = document.getElementById(elId);
+  if (!ranking.length) { el.innerHTML = '<div class="text-xs text-center py-4" style="color:var(--muted)">Sin datos</div>'; return; }
+  el.innerHTML = ranking.slice(0,10).map((p,i)=>{
+    const main  = MODULE==='gnc' ? Math.round(p.gnc) : Math.round(p.liqTotal);
+    const sub   = MODULE==='gnc' ? `${fmt(p.acSuelto,1)} L aceite` : `${fmt(p.acLts,1)} L aceite`;
+    const pct   = Math.round(main/max*100);
+    const color = colors[i]||'#3b82f6';
+    return `<div class="flex items-center gap-2.5">
+      <span class="text-xs w-4 text-right mono" style="color:var(--muted)">${i+1}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-semibold text-white truncate">${p.name}</span>
+          <span class="text-xs mono ml-2 whitespace-nowrap" style="color:${color}">${fmt(main)} ${MODULE==='gnc'?'m³':'L'}</span>
+        </div>
+        <div class="rank-bar" style="width:${pct}%;background:${color}"></div>
+        <div class="text-xs mt-0.5" style="color:var(--muted)">${sub}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTurnoDonut(chartId, legendId, rows) {
+  const TURNOS = ['MAÑANA','TARDE','NOCHE'];
+  const TCOLORS = ['#3b82f6','#f97316','#a78bfa'];
+  const TLABELS = ['Mañana','Tarde','Noche'];
+  const key = MODULE==='gnc' ? 'gnc' : 'liqTotal';
+  const td = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+(r[key]||0),0));
+  const tot = td.reduce((a,b)=>a+b,0)||1;
+
+  mkChart(chartId,chartId,{type:'doughnut',
+    data:{labels:TLABELS,datasets:[{data:td,backgroundColor:TCOLORS,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'63%',
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1a2e',borderColor:'#1e2d45',borderWidth:1,
+        titleColor:'#e2e8f0',bodyColor:'#94a3b8',callbacks:{label:c=>` ${c.parsed.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}}}
   });
 
-  if (activeFilters.worker === 'Todos') {
-    totalLitros = 0; heladera = 0; varios = 0; aceite = 0;
-    const yaSumado = new Set();
-    displayRows.forEach(r => {
-      const idUnicoFila = `${r[0]}_${r[1]}_${r[2]}_${r[11]}`;
-      const key = `${r[0].trim()}_${r[1].toUpperCase().trim()}`;
-      const divisor = prorrateoMap[key] ? prorrateoMap[key].size : 1;
+  if (legendId) {
+    document.getElementById(legendId).innerHTML = TLABELS.map((l,i)=>`
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${TCOLORS[i]}"></span><span class="text-xs" style="color:var(--muted)">${l}</span></div>
+        <span class="text-xs mono" style="color:var(--text)">${Math.round(td[i]/tot*100)}% · ${td[i].toLocaleString('es-AR')}</span>
+      </div>`).join('');
+  }
+}
 
-      if (!yaSumado.has(idUnicoFila)) {
-        yaSumado.add(idUnicoFila);
-        heladera += num(r[4]) / divisor;
-        varios += num(r[5]) / divisor;
-        aceite += num(r[6]) / divisor; 
-        totalLitros += num(r[11]) / divisor;
+function renderExtraCharts(rows) {
+  const TURNOS = ['MAÑANA','TARDE','NOCHE'];
+  const TLABELS = ['Mañana','Tarde','Noche'];
+  const TCOLORS = ['#3b82f6','#f97316','#a78bfa'];
+
+  if (MODULE==='gnc') {
+    // Extra1: Aceite suelto por turno
+    document.getElementById('chartExtra1Title').textContent = 'Aceite Suelto por Turno (Lts)';
+    const acData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.acSuelto,0));
+    mkChart('extra1','chartExtra1',{type:'bar',
+      data:{labels:TLABELS,datasets:[{data:acData,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
+      options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} L`}}},
+        scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toFixed(0)+'L'}}}}
+    });
+
+    // Extra2: GNC Regalado por turno
+    document.getElementById('chartExtra2Title').textContent = 'GNC Regalado por Turno ($)';
+    const regData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.regPesos,0));
+    const regMts  = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.regMts,0));
+    mkChart('extra2','chartExtra2',{type:'bar',
+      data:{labels:TLABELS,datasets:[
+        {label:'Reg. $',data:regData,backgroundColor:'rgba(249,115,22,.7)',borderRadius:4,borderSkipped:false,yAxisID:'yp'},
+        {label:'Reg. m³',data:regMts,backgroundColor:'rgba(167,139,250,.5)',borderRadius:4,borderSkipped:false,yAxisID:'ym'}
+      ]},
+      options:{...CH_DEFAULTS,plugins:{legend:{labels:{color:CHARTS.extra2?'#64748b':'#64748b',font:{size:10},boxWidth:8}},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>c.datasetIndex===0?` ${fmtPesos(c.parsed.y)}`:` ${c.parsed.y.toFixed(0)} m³`}}},
+        scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}},
+          yp:{position:'left',ticks:{color:'#f97316',font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.06)'}},
+          ym:{position:'right',ticks:{color:'#a78bfa',font:{size:9},callback:v=>v+'m³'},grid:{display:false}}}
+      }
+    });
+
+  } else {
+    // Extra1: Aceite Lts por turno
+    document.getElementById('chartExtra1Title').textContent = 'Lubricantes / Aceite por Turno (Lts)';
+    const acData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.acLts,0));
+    mkChart('extra1','chartExtra1',{type:'bar',
+      data:{labels:TLABELS,datasets:[{data:acData,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
+      options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} L`}}},
+        scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toFixed(0)+'L'}}}}
+    });
+
+    // Extra2: Heladera + Varios por turno
+    document.getElementById('chartExtra2Title').textContent = 'Heladera & Varios por Turno ($)';
+    const helData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.heladera,0));
+    const varData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.varios,0));
+    mkChart('extra2','chartExtra2',{type:'bar',
+      data:{labels:TLABELS,datasets:[
+        {label:'Heladera',data:helData,backgroundColor:'rgba(249,115,22,.7)',borderRadius:4,borderSkipped:false},
+        {label:'Varios',data:varData,backgroundColor:'rgba(34,211,238,.5)',borderRadius:4,borderSkipped:false}
+      ]},
+      options:{...CH_DEFAULTS,plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:8}},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${fmtPesos(c.parsed.y)}`}}},
+        scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>'$'+Math.round(v/1000)+'k'}}}
       }
     });
   }
-
-  const cantDias = uniqueDays.size || 1;
-  const promedioLts = totalLitros / cantDias;
-
-  const grid = document.getElementById('metricsGrid');
-  grid.innerHTML = `
-    <div class="card p-4 border-l-4 border-amber-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LTS COMBUSTIBLE</p>
-      <p class="text-xl font-black text-amber-500 mt-1">${Math.round(totalLitros).toLocaleString('es-AR')} L</p>
-    </div>
-    <div class="card p-4 border-l-4 border-red-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">TIENDA HELADERA</p>
-      <p class="text-xl font-black text-red-500 mt-1">$ ${Math.round(heladera).toLocaleString('es-AR')}</p>
-    </div>
-    <div class="card p-4 border-l-4 border-yellow-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">VARIOS SHOP</p>
-      <p class="text-xl font-black text-yellow-500 mt-1">$ ${Math.round(varios).toLocaleString('es-AR')}</p>
-    </div>
-    <div class="card p-4 border-l-4 border-teal-500">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">LUBRICANTES LIQ.</p>
-      <p class="text-xl font-black text-teal-400 mt-1">${Math.round(aceite).toLocaleString('es-AR')} L</p>
-    </div>
-    <div class="card p-4 border-l-4 border-gray-600">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">DÍAS LIQUIDADOS</p>
-      <p class="text-xl font-black text-gray-300 mt-1">${cantDias}</p>
-    </div>
-    <div class="card p-4">
-      <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">PROM. JORNADA</p>
-      <p class="text-xl font-black text-purple-400 mt-1">${Math.round(promedioLts).toLocaleString('es-AR')} L</p>
-    </div>
-  `;
-
-  document.getElementById('lblChartMainTitle').textContent = "Evolución Combustibles Líquidos (Litros)";
-  document.getElementById('lblRankingTitle').textContent = "Despacho Equitativo por Playero (Litros)";
-  document.getElementById('lblChartSecTitle').textContent = "Ingresos del Shop (Heladera $)";
-
-  const daysMap = {};
-  displayRows.forEach(r => {
-    const f = r[0].trim();
-    const t = r[1].toUpperCase().trim();
-    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
-    
-    const key = `${f}_${t}`;
-    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    daysMap[f] = (daysMap[f] || 0) + (num(r[11]) / numPlayerosEnTurno);
-  });
-  const labelsDates = Object.keys(daysMap).sort();
-  const valuesLts = labelsDates.map(k => daysMap[k]);
-
-  renderMainLineChart(labelsDates, valuesLts, "Litros Combustible", promedioLts, '#f59e0b');
-  renderTurnsChart(displayRows, 11, prorrateoMap); 
-  renderRankingChart(displayRows, 11, prorrateoMap); 
-  renderSecondaryBarChart(displayRows, 4, "Heladera $", prorrateoMap); 
 }
 
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); } }
+function renderTable(rows) {
+  const sorted = [...rows].sort((a,b)=>b.date-a.date);
+  document.getElementById('tableCount').textContent = `${Math.min(rows.length,80)} de ${rows.length} registros`;
 
-const baseChartOptions = {
-  responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { labels: { color: '#9ca3af', font: { size: 10 } } } },
-  scales: {
-    x: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.01)' } },
-    y: { ticks: { color: '#6b7280', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.02)' } }
+  if (MODULE==='gnc') {
+    document.getElementById('tableHead').innerHTML = `<tr>
+      <th>Fecha</th><th>Turno</th><th>Playero</th>
+      <th class="text-right">m³ GNC</th><th class="text-right">Ac. Suelto L</th>
+      <th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th>
+      <th class="text-right">ExtraGNC $</th></tr>`;
+    document.getElementById('tableBody').innerHTML = sorted.slice(0,80).map(r=>`<tr>
+      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+      <td class="font-medium text-white">${r.playero||'—'}</td>
+      <td class="text-right mono" style="color:#60a5fa;font-weight:600">${fmt(r.gnc)}</td>
+      <td class="text-right mono" style="color:#4ade80">${r.acSuelto?fmt(r.acSuelto,1):'—'}</td>
+      <td class="text-right mono" style="color:#fb923c">${r.regPesos?fmtPesos(r.regPesos):'—'}</td>
+      <td class="text-right mono" style="color:#c084fc">${r.regMts?fmt(r.regMts):'—'}</td>
+      <td class="text-right mono" style="color:#94a3b8">${r.extraGNC?fmtPesos(r.extraGNC):'—'}</td>
+    </tr>`).join('');
+  } else {
+    document.getElementById('tableHead').innerHTML = `<tr>
+      <th>Fecha</th><th>Turno</th><th>Playero 1</th><th>Playero 2</th>
+      <th class="text-right">Liq. Total L</th><th class="text-right">Aceite Lts</th>
+      <th class="text-right">Heladera $</th><th class="text-right">Varios $</th></tr>`;
+    document.getElementById('tableBody').innerHTML = sorted.slice(0,80).map(r=>`<tr>
+      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+      <td class="font-medium text-white">${r.playero||'—'}</td>
+      <td style="color:var(--muted)">${r.playero2||'—'}</td>
+      <td class="text-right mono" style="color:#67e8f9;font-weight:600">${fmt(r.liqTotal,1)}</td>
+      <td class="text-right mono" style="color:#4ade80">${r.acLts?fmt(r.acLts,1):'—'}</td>
+      <td class="text-right mono" style="color:#fb923c">${r.heladera?fmtPesos(r.heladera):'—'}</td>
+      <td class="text-right mono" style="color:#c084fc">${r.varios?fmtPesos(r.varios):'—'}</td>
+    </tr>`).join('');
   }
-};
-
-function renderMainLineChart(labels, dataValues, datasetLabel, average, colorGlow) {
-  destroyChart('main');
-  const ctx = document.getElementById('chartMain').getContext('2d');
-  charts.main = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [
-        { label: datasetLabel, data: dataValues, borderColor: colorGlow, backgroundColor: 'rgba(245,158,11,0.02)', fill: true, tension: 0.1, borderWidth: 2 },
-        { label: 'Media Período', data: dataValues.map(() => average), borderColor: '#fecb00', borderDash: [4, 4], pointRadius: 0, borderWidth: 1 }
-      ]
-    },
-    options: baseChartOptions
-  });
 }
 
-function renderTurnsChart(rows, dataColIdx, prorrateoMap) {
-  destroyChart('turns');
-  const turnsMap = { 'MAÑANA': 0, 'TARDE': 0, 'NOCHE': 0 };
-  
-  rows.forEach(r => {
-    const f = r[0].trim();
-    const t = r[1].toUpperCase().trim();
-    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
-    
-    const key = `${f}_${t}`;
-    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) / numPlayerosEnTurno;
+// ═══ RENDER HISTORIAL ═══
+function buildHistPills() {
+  const histRows = getHistRows(RAW);
+  const months = [...new Set(histRows.map(r=>r.monthKey))].sort((a,b)=>{
+    const toDate = s => { const [mn,yr]=s.split(' '); return new Date(+('20'+yr), MN.indexOf(mn)-1,1); };
+    return toDate(a) - toDate(b);
   });
 
-  const ctx = document.getElementById('chartTurns').getContext('2d');
-  charts.turns = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(turnsMap),
-      datasets: [{
-        data: Object.values(turnsMap),
-        backgroundColor: ['#e51225', '#fecb00', '#4b5563'],
-        borderWidth: 0
-      }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } } }
-  });
+  const el = document.getElementById('histMesPills');
+  el.innerHTML = [
+    `<span class="pill pill-cyan ${histFilters.mes==='__all__'?'active':''}" data-val="__all__" onclick="selectHistMes('__all__',this)">HISTORIAL COMPLETO</span>`,
+    ...months.map(m=>`<span class="pill pill-gray ${histFilters.mes===m?'active':''}" data-val="${m}" onclick="selectHistMes('${m}',this)">${m.toUpperCase()}</span>`)
+  ].join('');
 }
 
-function renderRankingChart(rows, dataColIdx, prorrateoMap) {
-  destroyChart('ranking');
-  const rank = {};
-  
-  rows.forEach(r => {
-    const f = r[0].trim();
-    const t = r[1].toUpperCase().trim();
-    const p = (r[2] || '').trim();
-    if (!p) return;
-    
-    const key = `${f}_${t}`;
-    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    const valorProrrateado = num(r[dataColIdx]) / numPlayerosEnTurno;
-
-    if (activeFilters.worker !== 'Todos' && p !== activeFilters.worker) return;
-    rank[p] = (rank[p] || 0) + valorProrrateado;
-  });
-
-  const sorted = Object.entries(rank).sort((a, b) => b[1] - a[1]);
-  const ctx = document.getElementById('chartRanking').getContext('2d');
-  charts.ranking = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: sorted.map(e => e[0]),
-      datasets: [{
-        label: 'Litros Asignados',
-        data: sorted.map(e => Math.round(e[1])),
-        backgroundColor: COLORS.chartSet,
-        borderRadius: 4
-      }]
-    },
-    options: { indexAxis: 'y', ...baseChartOptions, plugins: { legend: { display: false } } }
-  });
+function selectHistMes(val, el) {
+  histFilters.mes = val;
+  document.getElementById('histMesPills').querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const sf = document.getElementById('histSecondaryFilters');
+  sf.style.removeProperty('display');
+  sf.style.display = 'flex';
+  sf.style.flexWrap = 'wrap';
+  sf.style.alignItems = 'center';
+  sf.style.gap = '12px';
+  renderHist();
 }
 
-function renderSecondaryBarChart(rows, dataColIdx, labelName, prorrateoMap) {
-  destroyChart('secondary');
-  const turnsMap = { 'MAÑANA': 0, 'TARDE': 0, 'NOCHE': 0 };
-  
-  rows.forEach(r => {
-    const f = r[0].trim();
-    const t = r[1].toUpperCase().trim();
-    if (activeFilters.worker !== 'Todos' && r[2].trim() !== activeFilters.worker) return;
-    
-    const key = `${f}_${t}`;
-    const numPlayerosEnTurno = prorrateoMap[key] ? prorrateoMap[key].size : 1;
-    if (turnsMap[t] !== undefined) turnsMap[t] += num(r[dataColIdx]) / numPlayerosEnTurno;
-  });
-
-  const ctx = document.getElementById('chartSecondary').getContext('2d');
-  charts.secondary = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(turnsMap),
-      datasets: [{
-        label: labelName,
-        data: Object.values(turnsMap),
-        backgroundColor: ['#e51225', '#fecb00', '#4b5563'],
-        borderRadius: 4
-      }]
-    },
-    options: { ...baseChartOptions, plugins: { legend: { display: false } } }
-  });
+function getHistFiltered() {
+  const histRows = getHistRows(RAW);
+  return histRows.filter(r =>
+    (histFilters.mes==='__all__' || r.monthKey===histFilters.mes) &&
+    (!histFilters.turno   || r.turno===histFilters.turno) &&
+    (!histFilters.playero || r.playero===histFilters.playero || r.playero2===histFilters.playero)
+  );
 }
 
-function setupEventListeners() {
-  document.getElementById('btnRefresh').addEventListener('click', fetchData);
+function renderHist() {
+  if (!RAW.length) return;
+  const histRows = getHistRows(RAW);
+  buildPlayeroSelect(histRows, 'histFilterPlayero');
+  histFilters.playero = document.getElementById('histFilterPlayero').value;
+
+  const filtered = getHistFiltered();
+  const { totals } = aggregate(histRows, r => {
+    return (histFilters.mes==='__all__' || r.monthKey===histFilters.mes) &&
+           (!histFilters.turno   || r.turno===histFilters.turno) &&
+           (!histFilters.playero || r.playero===histFilters.playero);
+  });
+
+  const dias = [...new Set(filtered.map(r=>r.dateKey))].length;
+  document.getElementById('histInfo').textContent = `${filtered.length} registros · ${dias} días`;
+
+  // KPIs
+  renderKPIs('histKpiGrid', totals, dias, filtered.length);
+
+  // Monthly bar
+  const mm = {};
+  filtered.forEach(r => {
+    mm[r.monthKey] = (mm[r.monthKey]||0) + (MODULE==='gnc' ? r.gnc : r.liqTotal);
+  });
+  const mKeys = Object.keys(mm).sort((a,b)=>{
+    const toD = s => { const [mn,yr]=s.split(' '); return new Date(+('20'+yr),MN.indexOf(mn)-1,1); };
+    return toD(a)-toD(b);
+  });
+  mkChart('histMensual','histChartMensual',{type:'bar',
+    data:{labels:mKeys,datasets:[{data:mKeys.map(k=>mm[k]),backgroundColor:'rgba(59,130,246,.6)',hoverBackgroundColor:'#3b82f6',borderRadius:5,borderSkipped:false}]},
+    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
+      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}}
+  });
+
+  // Ranking hist
+  renderRanking('histRankingList', filtered);
+
+  // Turno comparison
+  const TURNOS=['MAÑANA','TARDE','NOCHE'], TLABELS=['Mañana','Tarde','Noche'], TCOLORS=['#3b82f6','#f97316','#a78bfa'];
+  const key = MODULE==='gnc'?'gnc':'liqTotal';
+  const td = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[key]||0),0));
+  mkChart('histTurno','histChartTurno',{type:'bar',
+    data:{labels:TLABELS,datasets:[{data:td,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
+    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
+      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}}
+  });
+
+  // Extra: auxiliary metric
+  const aux2Key = MODULE==='gnc' ? 'acSuelto' : 'acLts';
+  const aux2Label = MODULE==='gnc' ? 'Aceite Suelto (L)' : 'Lubricantes (L)';
+  document.getElementById('histExtra1Title').textContent = aux2Label+' por Turno';
+  const td2 = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[aux2Key]||0),0));
+  mkChart('histExtra','histChartExtra',{type:'doughnut',
+    data:{labels:TLABELS,datasets:[{data:td2,backgroundColor:TCOLORS,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{labels:{color:'#64748b',font:{size:11},boxWidth:10}},
+        tooltip:{backgroundColor:'#0f1a2e',borderColor:'#1e2d45',borderWidth:1,
+          titleColor:'#e2e8f0',bodyColor:'#94a3b8',callbacks:{label:c=>` ${c.parsed.toFixed(1)} L`}}}}
+  });
+
+  // Table
+  document.getElementById('histTableCount').textContent = `${Math.min(filtered.length,100)} de ${filtered.length}`;
+  const sorted = [...filtered].sort((a,b)=>b.date-a.date);
+  if (MODULE==='gnc') {
+    document.getElementById('histTableHead').innerHTML = `<tr>
+      <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
+      <th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th>
+      <th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`;
+    document.getElementById('histTableBody').innerHTML = sorted.slice(0,100).map(r=>`<tr>
+      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+      <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
+      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+      <td class="font-medium text-white">${r.playero||'—'}</td>
+      <td class="text-right mono" style="color:#60a5fa;font-weight:600">${fmt(r.gnc)}</td>
+      <td class="text-right mono" style="color:#4ade80">${r.acSuelto?fmt(r.acSuelto,1):'—'}</td>
+      <td class="text-right mono" style="color:#fb923c">${r.regPesos?fmtPesos(r.regPesos):'—'}</td>
+      <td class="text-right mono" style="color:#c084fc">${r.regMts?fmt(r.regMts):'—'}</td>
+    </tr>`).join('');
+  } else {
+    document.getElementById('histTableHead').innerHTML = `<tr>
+      <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
+      <th class="text-right">Liq. L</th><th class="text-right">Aceite L</th>
+      <th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
+    document.getElementById('histTableBody').innerHTML = sorted.slice(0,100).map(r=>`<tr>
+      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+      <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
+      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+      <td class="font-medium text-white">${r.playero||'—'}</td>
+      <td class="text-right mono" style="color:#67e8f9;font-weight:600">${fmt(r.liqTotal,1)}</td>
+      <td class="text-right mono" style="color:#4ade80">${r.acLts?fmt(r.acLts,1):'—'}</td>
+      <td class="text-right mono" style="color:#fb923c">${r.heladera?fmtPesos(r.heladera):'—'}</td>
+      <td class="text-right mono" style="color:#c084fc">${r.varios?fmtPesos(r.varios):'—'}</td>
+    </tr>`).join('');
+  }
 }
 
-window.onload = init;
+// ═══ MAIN REFRESH ═══
+async function refresh() {
+  document.getElementById('lastUpdate').textContent = 'Actualizando…';
+  document.getElementById('loadingIndicator').style.removeProperty('display');
+  try {
+    const url = MODULE==='gnc' ? URL_GNC : URL_LIQ;
+    const txt = await loadData(url);
+    const rows = parseCSV(txt);
+    // skip header rows (first 2 if they have no valid date)
+    RAW = (MODULE==='gnc' ? parseGNC(rows) : parseLIQ(rows))
+          .filter(r => r.gnc > 0 || r.acSuelto > 0 || r.regMts > 0 || r.liqTotal > 0 || r.heladera > 0 || r.acLts > 0);
+
+    document.getElementById('lastUpdate').textContent =
+      'Actualizado ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('headerSub').textContent =
+      `${MODULE==='gnc'?'Control GNC':'Control Líquidos & Shop'} · ${RAW.length} registros cargados`;
+
+    if (VIEW==='mes') { renderMes(); }
+    else              { buildHistPills(); renderHist(); }
+
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = 'Error: ' + e.message;
+    console.error(e);
+  } finally {
+    document.getElementById('loadingIndicator').style.display = 'none';
+  }
+}
+
+// ═══ INIT ═══
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = 'rgba(255,255,255,.05)';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+
+refresh();
+setInterval(refresh, 5 * 60 * 1000);
 </script>
 </body>
 </html>
