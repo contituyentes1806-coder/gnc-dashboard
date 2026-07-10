@@ -120,6 +120,7 @@
 </head>
 <body>
 
+<!-- ═══════════════════ TOP BAR ═══════════════════ -->
 <header style="background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50">
   <div class="max-w-screen-2xl mx-auto px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
     <div class="flex items-center gap-3">
@@ -130,6 +131,7 @@
       </div>
     </div>
 
+    <!-- Module switcher -->
     <div class="flex items-center gap-2">
       <button class="mod-tab active-gnc" id="btnGNC" onclick="switchModule('gnc')">⚡ CONTROL GNC</button>
       <button class="mod-tab" id="btnLIQ" onclick="switchModule('liq')">💧 CONTROL LÍQUIDOS & SHOP</button>
@@ -145,8 +147,10 @@
   </div>
 </header>
 
+<!-- ═══════════════════ MAIN ═══════════════════ -->
 <main class="max-w-screen-2xl mx-auto px-5 py-5">
 
+  <!-- VIEW TABS -->
   <div class="flex items-center gap-2 mb-5">
     <button class="view-tab active" id="tabMes" onclick="switchView('mes')">📅 Mes en Curso</button>
     <button class="view-tab" id="tabHist" onclick="switchView('hist')">📊 Historial</button>
@@ -156,6 +160,7 @@
     </div>
   </div>
 
+  <!-- ALERT -->
   <div id="alertBanner" class="alert-box mb-4 hidden">
     <div class="flex items-start gap-2">
       <span class="text-orange-400 text-sm mt-px">⚠</span>
@@ -166,8 +171,10 @@
     </div>
   </div>
 
+  <!-- ─── MES EN CURSO ─── -->
   <div id="viewMes" class="fade-up">
 
+    <!-- FILTERS -->
     <div class="flex flex-wrap items-center gap-3 mb-5 p-3 card">
       <div class="flex items-center gap-2">
         <span class="text-xs font-medium" style="color:var(--muted)">TURNO</span>
@@ -188,9 +195,12 @@
       <div class="ml-auto text-xs mono" style="color:var(--muted)" id="mesInfo"></div>
     </div>
 
+    <!-- KPI GRID -->
     <div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
 
+    <!-- CHARTS ROW 1 -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <!-- Daily trend -->
       <div class="card p-5 lg:col-span-2">
         <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
@@ -202,12 +212,14 @@
         <div style="position:relative;height:220px"><canvas id="chartDaily"></canvas></div>
       </div>
 
+      <!-- Ranking -->
       <div class="card p-5">
         <div class="sec-title" id="rankTitle">Ranking de Playeros</div>
         <div id="rankingList" class="space-y-3 overflow-y-auto" style="max-height:260px"></div>
       </div>
     </div>
 
+    <!-- CHARTS ROW 2 -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <div class="card p-5">
         <div class="sec-title">Distribución por Turno</div>
@@ -224,6 +236,7 @@
       </div>
     </div>
 
+    <!-- DETAIL TABLE -->
     <div class="card p-5">
       <div class="flex items-center justify-between mb-3">
         <div class="font-semibold text-sm text-white">Detalle por Jornada</div>
@@ -233,8 +246,12 @@
         <table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
       </div>
     </div>
-  </div><div id="viewHist" class="hidden fade-up">
+  </div><!-- end viewMes -->
 
+  <!-- ─── HISTORIAL ─── -->
+  <div id="viewHist" class="hidden fade-up">
+
+    <!-- HIST FILTERS -->
     <div class="card p-4 mb-5">
       <div class="flex flex-wrap items-center gap-3 mb-3">
         <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Período</span>
@@ -258,8 +275,10 @@
       </div>
     </div>
 
+    <!-- HIST KPIs -->
     <div id="histKpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
 
+    <!-- HIST CHARTS -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
       <div class="card p-5 lg:col-span-2">
         <div class="font-semibold text-sm text-white mb-1">Evolución Mensual</div>
@@ -290,8 +309,11 @@
         <table><thead id="histTableHead"></thead><tbody id="histTableBody"></tbody></table>
       </div>
     </div>
-  </div></main>
+  </div><!-- end viewHist -->
 
+</main>
+
+<!-- ═══════════════════ SCRIPT ═══════════════════ -->
 <script>
 // ═══ CONSTANTS ═══
 const BASE_URL = "https://docs.google.com/spreadsheets/d/1Mi9g0qnBZRj70IdQl_6M1JxjMGRnyw1wOCh56D7cv64/gviz/tq?tqx=out:csv";
@@ -658,30 +680,123 @@ function renderMes() {
 
 function renderKPIs(gridId, totals, dias, total) {
   const grid = document.getElementById(gridId);
+
+  // ── Projection logic ──
+  // Only apply projection on the "mes en curso" KPI grid (not historial)
+  const isMes = gridId === 'kpiGrid';
+  const t = today();
+  const diasEnMes = new Date(t.getFullYear(), t.getMonth()+1, 0).getDate(); // total days in month
+  // Projection: (acumulado / días cerrados) * días totales del mes
+  function proy(val) {
+    if (!isMes || !dias) return null;
+    return Math.round(val / dias * diasEnMes);
+  }
+  function proyL(val) {
+    if (!isMes || !dias) return null;
+    return Math.round(val / dias * diasEnMes * 10) / 10;
+  }
+  const pct = isMes && diasEnMes ? Math.round(dias / diasEnMes * 100) : null;
+
   let cards = [];
   if (MODULE === 'gnc') {
+    const avgGNC = dias ? Math.round(totals.gnc / dias) : 0;
+    const prGNC  = proy(totals.gnc);
+    const prAc   = proyL(totals.acSuelto);
+    const prReg  = proy(totals.regPesos);
+    const prExt  = proy(totals.extraGNC + totals.varios);
     cards = [
-      { label:'m³ GNC Acumulado',    val: fmtM3(totals.gnc),       sub: `Prom ${fmtM3(dias?Math.round(totals.gnc/dias):0)}/día`,  color:'#3b82f6', prog: totals.gnc },
-      { label:'Aceite Suelto',        val: fmt(totals.acSuelto,1)+' L', sub: 'litros de aceite suelto', color:'#22c55e', prog: totals.acSuelto },
-      { label:'GNC Regalado $',       val: fmtPesos(totals.regPesos), sub: fmt(totals.regMts)+' m³ en cortesías', color:'#f97316', prog: totals.regPesos },
-      { label:'Extra GNC / Varios',   val: fmtPesos(totals.extraGNC+totals.varios), sub: fmtPesos(totals.efGNC)+' efectivo GNC', color:'#a78bfa', prog: totals.extraGNC },
+      {
+        label: 'm³ GNC Acumulado',
+        val:   fmtM3(totals.gnc),
+        sub:   `Prom ${fmt(avgGNC)} m³/día`,
+        proy:  prGNC !== null ? `→ cierre estimado: ${fmt(prGNC)} m³` : null,
+        color: '#3b82f6', prog: totals.gnc
+      },
+      {
+        label: 'Aceite Suelto',
+        val:   fmt(totals.acSuelto, 1) + ' L',
+        sub:   'litros de aceite suelto',
+        proy:  prAc !== null ? `→ cierre estimado: ${fmt(prAc, 1)} L` : null,
+        color: '#22c55e', prog: totals.acSuelto
+      },
+      {
+        label: 'GNC Regalado $',
+        val:   fmtPesos(totals.regPesos),
+        sub:   fmt(totals.regMts) + ' m³ en cortesías',
+        proy:  prReg !== null ? `→ cierre estimado: ${fmtPesos(prReg)}` : null,
+        color: '#f97316', prog: totals.regPesos
+      },
+      {
+        label: 'Extra GNC / Varios',
+        val:   fmtPesos(totals.extraGNC + totals.varios),
+        sub:   fmtPesos(totals.efGNC) + ' efectivo GNC',
+        proy:  prExt !== null ? `→ cierre estimado: ${fmtPesos(prExt)}` : null,
+        color: '#a78bfa', prog: totals.extraGNC
+      },
     ];
   } else {
+    const avgLiq = dias ? totals.liqTotal / dias : 0;
+    const prLiq  = proyL(totals.liqTotal);
+    const prAc   = proyL(totals.acLts);
+    const prHel  = proy(totals.heladera);
+    const prVar  = proy(totals.varios);
     cards = [
-      { label:'Total Liq. (Lts)',  val: fmt(totals.liqTotal,1)+' L', sub: `Prom ${fmt(dias?totals.liqTotal/dias:0,1)} L/día`, color:'#22d3ee', prog: totals.liqTotal },
-      { label:'Aceite / Lubric.',  val: fmt(totals.acLts,1)+' L',   sub: 'litros de lubricantes', color:'#22c55e', prog: totals.acLts },
-      { label:'Ventas Heladera',   val: fmtPesos(totals.heladera),  sub: `${dias} días cerrados`, color:'#f97316', prog: totals.heladera },
-      { label:'Ventas Varios',     val: fmtPesos(totals.varios),    sub: 'acumulado período',   color:'#a78bfa', prog: totals.varios },
+      {
+        label: 'Total Liq. (Lts)',
+        val:   fmt(totals.liqTotal, 1) + ' L',
+        sub:   `Prom ${fmt(avgLiq, 1)} L/día`,
+        proy:  prLiq !== null ? `→ cierre estimado: ${fmt(prLiq, 1)} L` : null,
+        color: '#22d3ee', prog: totals.liqTotal
+      },
+      {
+        label: 'Aceite / Lubric.',
+        val:   fmt(totals.acLts, 1) + ' L',
+        sub:   'litros de lubricantes',
+        proy:  prAc !== null ? `→ cierre estimado: ${fmt(prAc, 1)} L` : null,
+        color: '#22c55e', prog: totals.acLts
+      },
+      {
+        label: 'Ventas Heladera',
+        val:   fmtPesos(totals.heladera),
+        sub:   `${dias} días cerrados`,
+        proy:  prHel !== null ? `→ cierre estimado: ${fmtPesos(prHel)}` : null,
+        color: '#f97316', prog: totals.heladera
+      },
+      {
+        label: 'Ventas Varios',
+        val:   fmtPesos(totals.varios),
+        sub:   'acumulado período',
+        proy:  prVar !== null ? `→ cierre estimado: ${fmtPesos(prVar)}` : null,
+        color: '#a78bfa', prog: totals.varios
+      },
     ];
   }
 
-  const maxProg = Math.max(...cards.map(c=>c.prog), 1);
+  const maxProg = Math.max(...cards.map(c => c.prog), 1);
+  const progBar = isMes && pct !== null
+    ? `<div class="prog-track" style="margin-top:6px">
+         <div class="prog-fill" style="width:${pct}%;background:rgba(255,255,255,.15)"></div>
+       </div>
+       <div style="display:flex;justify-content:space-between;margin-top:3px">
+         <span style="font-size:10px;color:var(--muted)">${dias}/${diasEnMes} días</span>
+         <span style="font-size:10px;color:var(--muted)">${pct}% del mes</span>
+       </div>`
+    : '';
+
   grid.innerHTML = cards.map(c => `
     <div class="kpi-card">
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-val" style="color:${c.color}">${c.val}</div>
       <div class="kpi-sub">${c.sub}</div>
-      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,Math.round(c.prog/maxProg*100))}%;background:${c.color}"></div></div>
+      ${c.proy ? `<div style="font-size:10px;margin-top:5px;color:${c.color};opacity:.75;font-weight:600;letter-spacing:.01em">${c.proy}</div>` : ''}
+      <div class="prog-track" style="margin-top:${c.proy?'7px':'8px'}">
+        <div class="prog-fill" style="width:${Math.min(100,Math.round(c.prog/maxProg*100))}%;background:${c.color}"></div>
+      </div>
+      ${isMes && pct!==null ? `
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:var(--muted)">${dias}/${diasEnMes} días cerrados</span>
+          <span style="font-size:10px;color:var(--muted)">${pct}%</span>
+        </div>` : ''}
     </div>`).join('');
 }
 
