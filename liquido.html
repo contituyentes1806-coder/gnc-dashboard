@@ -783,21 +783,51 @@ function renderKPIs(gridId, totals, dias, total) {
        </div>`
     : '';
 
-  grid.innerHTML = cards.map(c => `
-    <div class="kpi-card">
-      <div class="kpi-label">${c.label}</div>
-      <div class="kpi-val" style="color:${c.color}">${c.val}</div>
-      <div class="kpi-sub">${c.sub}</div>
-      ${c.proy ? `<div style="font-size:10px;margin-top:5px;color:${c.color};opacity:.75;font-weight:600;letter-spacing:.01em">${c.proy}</div>` : ''}
-      <div class="prog-track" style="margin-top:${c.proy?'7px':'8px'}">
-        <div class="prog-fill" style="width:${Math.min(100,Math.round(c.prog/maxProg*100))}%;background:${c.color}"></div>
-      </div>
-      ${isMes && pct!==null ? `
+  grid.innerHTML = cards.map(c => {
+    // Strip prefix "→ cierre estimado: " to get just the raw projected value
+    const proyVal = c.proy ? c.proy.replace(/^→ cierre estimado:\s*/i, '') : null;
+
+    if (isMes && proyVal) {
+      // ── MES EN CURSO: cierre estimado GRANDE, acumulado PEQUEÑO ──
+      return `
+      <div class="kpi-card">
+        <div class="kpi-label">${c.label}</div>
+
+        <!-- Acumulado: pequeño, rol de referencia -->
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px">
+          <span style="font-size:13px;font-weight:600;color:${c.color};opacity:.65;font-family:'JetBrains Mono',monospace">${c.val}</span>
+          <span style="font-size:10px;color:var(--muted)">acumulado</span>
+        </div>
+
+        <!-- Promedio/sub -->
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${c.sub}</div>
+
+        <!-- Cierre estimado: GRANDE, protagonista -->
+        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${c.color};opacity:.55;margin-bottom:3px">Cierre estimado</div>
+        <div class="kpi-val" style="color:${c.color};font-size:22px">${proyVal}</div>
+
+        <!-- Barra de progreso del mes -->
+        <div class="prog-track" style="margin-top:10px">
+          <div class="prog-fill" style="width:${pct}%;background:${c.color}"></div>
+        </div>
         <div style="display:flex;justify-content:space-between;margin-top:3px">
           <span style="font-size:10px;color:var(--muted)">${dias}/${diasEnMes} días cerrados</span>
-          <span style="font-size:10px;color:var(--muted)">${pct}%</span>
-        </div>` : ''}
-    </div>`).join('');
+          <span style="font-size:10px;color:${c.color};opacity:.7;font-weight:600">${pct}%</span>
+        </div>
+      </div>`;
+    } else {
+      // ── HISTORIAL o sin proyección: layout original ──
+      return `
+      <div class="kpi-card">
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-val" style="color:${c.color}">${c.val}</div>
+        <div class="kpi-sub">${c.sub}</div>
+        <div class="prog-track" style="margin-top:8px">
+          <div class="prog-fill" style="width:${Math.min(100,Math.round(c.prog/maxProg*100))}%;background:${c.color}"></div>
+        </div>
+      </div>`;
+    }
+  }).join('');
 }
 
 function renderDailyChart(rows, filterFn) {
@@ -1180,4 +1210,4 @@ refresh();
 setInterval(refresh, 5 * 60 * 1000);
 </script>
 </body>
-</html> 
+</html>
