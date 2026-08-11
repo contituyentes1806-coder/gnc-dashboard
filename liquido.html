@@ -1,628 +1,1440 @@
 <!DOCTYPE html>
-<html lang="es"> 
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-<title>Dashboard GNC</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Estación de Servicio</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0d0f14;--bg2:#13161d;--bg3:#1a1e28;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#e8eaf0;--muted:#7a7f92;--blue:#4a9eff;--blue2:#1e6fd4;--green:#2fcb8d;--amber:#f5a623;--purple:#9b7fe8;--red:#f05050;--cyan:#22d3ee;--orange:#ff7b3d;--r:12px;--rsm:8px}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;padding:20px}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:36px;height:36px;background:var(--blue2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-weight:500;font-size:13px;color:#fff}
-h1{font-size:18px;font-weight:600;letter-spacing:-.3px}
-.subtitle{font-size:12px;color:var(--muted);margin-top:1px}
-.header-right{display:flex;align-items:center;gap:8px}
-.status-btn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:var(--bg3);border:0.5px solid var(--border2);padding:6px 12px;border-radius:20px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s}
-.status-btn:hover{border-color:var(--blue);color:var(--text)}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes spin{to{transform:rotate(360deg)}}
+  :root {
+    --bg:       #0a0f1e;
+    --surface:  #0f172a;
+    --card:     #131c31;
+    --border:   #1e2d45;
+    --border2:  #243452;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --blue:     #3b82f6;
+    --blue2:    #1d4ed8;
+    --cyan:     #22d3ee;
+    --green:    #22c55e;
+    --orange:   #f97316;
+    --amber:    #f59e0b;
+    --purple:   #a78bfa;
+    --red:      #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
 
-/* TAB NAV */
-.tab-nav{display:flex;gap:4px;margin-bottom:18px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:4px}
-.tab-btn{flex:1;padding:8px 12px;border:none;border-radius:var(--rsm);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
-.tab-btn.active{background:var(--blue2);color:#fff}
-.tab-btn:hover:not(.active){background:var(--bg3);color:var(--text)}
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-/* FILTERS */
-.filters{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 16px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
-.fg{display:flex;flex-direction:column;gap:5px}
-.fg label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.pills{display:flex;flex-wrap:wrap;gap:4px}
-.pill{font-size:12px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
-.pill:hover{border-color:rgba(255,255,255,.3);color:var(--text)}
-.pill.ob{background:rgba(74,158,255,.15);border-color:var(--blue);color:var(--blue)}
-.pill.og{background:rgba(47,203,141,.12);border-color:var(--green);color:var(--green)}
-.pill.oa{background:rgba(245,166,35,.12);border-color:var(--amber);color:var(--amber)}
+  /* cards */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  .card-glow-blue { box-shadow: 0 0 0 1px rgba(59,130,246,.15), 0 4px 24px rgba(59,130,246,.06); }
+  .card-glow-orange { box-shadow: 0 0 0 1px rgba(249,115,22,.15), 0 4px 24px rgba(249,115,22,.06); }
 
-/* METRICS */
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
-.mc{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;transition:border-color .2s}
-.mc:hover{border-color:var(--border2)}
-.mc-label{font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
-.mc-val{font-size:20px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-1px;line-height:1;margin-bottom:3px}
-.mc-sub{font-size:11px;color:var(--muted)}
-.mc-proj{font-size:11px;color:var(--cyan);margin-top:2px}
-.blue{color:var(--blue)}.green{color:var(--green)}.amber{color:var(--amber)}.purple{color:var(--purple)}.cyan{color:var(--cyan)}.orange{color:var(--orange)}
+  /* pills */
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: .03em; cursor: pointer; transition: all .15s; border: 1px solid transparent; user-select: none; }
+  .pill-blue   { background: rgba(59,130,246,.12); color: #60a5fa; border-color: rgba(59,130,246,.25); }
+  .pill-blue.active, .pill-blue:hover { background: rgba(59,130,246,.28); border-color: #3b82f6; }
+  .pill-orange { background: rgba(249,115,22,.12); color: #fb923c; border-color: rgba(249,115,22,.25); }
+  .pill-orange.active, .pill-orange:hover { background: rgba(249,115,22,.28); border-color: #f97316; }
+  .pill-green  { background: rgba(34,197,94,.1);  color: #4ade80; border-color: rgba(34,197,94,.2); }
+  .pill-green.active, .pill-green:hover  { background: rgba(34,197,94,.25); border-color: #22c55e; }
+  .pill-purple { background: rgba(167,139,250,.1); color: #c084fc; border-color: rgba(167,139,250,.2); }
+  .pill-purple.active, .pill-purple:hover { background: rgba(167,139,250,.25); border-color: #a78bfa; }
+  .pill-gray   { background: rgba(100,116,139,.1); color: #94a3b8; border-color: rgba(100,116,139,.2); }
+  .pill-gray.active, .pill-gray:hover   { background: rgba(100,116,139,.25); border-color: #64748b; }
+  .pill-cyan   { background: rgba(34,211,238,.1);  color: #67e8f9; border-color: rgba(34,211,238,.2); }
+  .pill-cyan.active, .pill-cyan:hover   { background: rgba(34,211,238,.25); border-color: #22d3ee; }
 
-/* PROGRESS BAR */
-.prog-wrap{margin-top:6px}
-.prog-label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px}
-.prog-track{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.prog-fill{height:100%;border-radius:2px;background:var(--blue);transition:width .6s ease}
+  /* module tabs */
+  .mod-tab { padding: 9px 20px; border-radius: 8px; font-size: 12px; font-weight: 600; letter-spacing: .04em; cursor: pointer; transition: all .2s; border: 1px solid transparent; }
+  .mod-tab.active-gnc    { background: var(--blue2); color: #fff; border-color: var(--blue); }
+  .mod-tab.active-liq    { background: #065f46; color: #6ee7b7; border-color: #059669; }
+  .mod-tab:not(.active-gnc):not(.active-liq) { background: var(--surface); color: var(--muted); border-color: var(--border); }
+  .mod-tab:not(.active-gnc):not(.active-liq):hover { border-color: var(--border2); color: var(--text); }
 
-/* CARDS */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
-@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
-.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;transition:border-color .2s}
-.card:hover{border-color:var(--border2)}
-.card-title{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:12px}
-.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;font-size:11px;color:var(--muted)}
-.leg-sq{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle}
-.donut-wrap{display:flex;align-items:center;gap:14px}
-.donut-leg{display:flex;flex-direction:column;gap:7px;font-size:12px}
-.donut-leg-row{display:flex;align-items:center;gap:6px}
-.donut-leg-row span:last-child{color:var(--muted);font-family:'DM Mono',monospace;font-size:11px}
+  /* view tabs */
+  .view-tab { padding: 7px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+  .view-tab.active { background: rgba(59,130,246,.15); color: #60a5fa; border-color: rgba(59,130,246,.4); }
+  .view-tab:hover:not(.active) { border-color: var(--border2); color: var(--text); }
 
-/* ERROR */
-#err{display:none;background:rgba(240,80,80,.1);border:0.5px solid rgba(240,80,80,.3);border-radius:var(--rsm);padding:10px 14px;color:var(--red);font-size:13px;margin-bottom:14px}
+  /* kpi cards */
+  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: border-color .2s; }
+  .kpi-card:hover { border-color: var(--border2); }
+  .kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -.5px; }
+  .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-footer{margin-top:20px;text-align:center;font-size:11px;color:var(--muted)}
+  /* alert */
+  .alert-box { background: rgba(249,115,22,.06); border: 1px solid rgba(249,115,22,.2); border-radius: 10px; padding: 10px 16px; }
 
-/* BADGE proyección */
-.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;margin-left:6px;vertical-align:middle}
-.badge-cyan{background:rgba(34,211,238,.12);color:var(--cyan);border:0.5px solid rgba(34,211,238,.3)}
-.badge-green{background:rgba(47,203,141,.12);color:var(--green);border:0.5px solid rgba(47,203,141,.3)}
+  /* table */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { font-size: 12px; padding: 8px 12px; border-bottom: 1px solid rgba(30,45,69,.5); white-space: nowrap; }
+  tr:hover td { background: rgba(59,130,246,.03); }
+  tr:last-child td { border-bottom: none; }
+
+  /* turno badges */
+  .t-m { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.2); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+  .t-t { background: rgba(249,115,22,.12); color: #fdba74; border: 1px solid rgba(249,115,22,.2); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+  .t-n { background: rgba(167,139,250,.12); color: #c4b5fd; border: 1px solid rgba(167,139,250,.2); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+
+  /* spinner */
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* dot live */
+  .dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+  /* rank bar */
+  .rank-bar { height: 5px; border-radius: 3px; transition: width .7s ease; }
+
+  /* section title */
+  .sec-title { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+  /* progress */
+  .prog-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .prog-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation: fadeUp .3s ease forwards; }
+
+  select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 5px 10px; font-size: 12px; font-family: 'Inter', sans-serif;
+    outline: none; cursor: pointer;
+  }
+  select:focus { border-color: var(--blue); }
+  option { background: var(--card); }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-icon">GNC</div>
-    <div>
-      <h1>Dashboard de ventas</h1>
-      <div class="subtitle" id="last-update">Cargando datos…</div>
+<!-- ═══════════════════ TOP BAR ═══════════════════ -->
+<header style="background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50">
+  <div class="max-w-screen-2xl mx-auto px-5 py-3 flex items-center justify-between gap-4 flex-wrap">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style="background:linear-gradient(135deg,#1d4ed8,#7c3aed)">ES</div>
+      <div>
+        <div class="font-semibold text-white text-sm leading-tight">Dashboard · Estación de Servicio</div>
+        <div class="text-xs" style="color:var(--muted)" id="headerSub">Cargando datos…</div>
+      </div>
     </div>
-  </div>
-  <div class="header-right">
-    <button class="status-btn" onclick="loadData()">
-      <span class="dot" id="sdot"></span>
-      <span id="stxt">En vivo</span>
-    </button>
+
+    <!-- Module switcher -->
+    <div class="flex items-center gap-2">
+      <button class="mod-tab active-gnc" id="btnGNC" onclick="switchModule('gnc')">⚡ CONTROL GNC</button>
+      <button class="mod-tab" id="btnLIQ" onclick="switchModule('liq')">💧 CONTROL LÍQUIDOS & SHOP</button>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 text-xs" style="color:var(--muted)">
+        <span class="dot-live"></span>
+        <span id="lastUpdate">—</span>
+      </div>
+      <button onclick="refresh()" class="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors" style="border-color:var(--border);color:var(--muted)" onmouseover="this.style.borderColor='var(--blue)';this.style.color='#60a5fa'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↻ Actualizar</button>
+    </div>
   </div>
 </header>
 
-<div id="err"></div>
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="max-w-screen-2xl mx-auto px-5 py-5">
 
-<!-- TABS -->
-<div class="tab-nav">
-  <button class="tab-btn active" onclick="setTab('current')" id="tab-current">📅 Mes en curso</button>
-  <button class="tab-btn" onclick="setTab('history')" id="tab-history">📊 Histórico</button>
-</div>
-
-<!-- ===== TAB: MES EN CURSO ===== -->
-<div id="view-current">
-  <!-- métricas acumuladas + proyección -->
-  <div class="metrics" id="cur-metrics">
-    <div class="mc">
-      <div class="mc-label">m³ GNC acumulados</div>
-      <div class="mc-val blue" id="cur-gnc">—</div>
-      <div class="mc-proj" id="cur-gnc-proj">Proyección: —</div>
-      <div class="prog-wrap"><div class="prog-label"><span id="cur-gnc-pct-l">0%</span><span id="cur-gnc-days"></span></div><div class="prog-track"><div class="prog-fill" id="cur-gnc-bar" style="width:0%"></div></div></div>
-    </div>
-    <div class="mc">
-      <div class="mc-label">Lts aceite acumulados</div>
-      <div class="mc-val amber" id="cur-ac">—</div>
-      <div class="mc-proj" id="cur-ac-proj">Proyección: —</div>
-    </div>
-    <div class="mc">
-      <div class="mc-label">Días con datos</div>
-      <div class="mc-val green" id="cur-dias">—</div>
-      <div class="mc-sub" id="cur-dias-sub">de — días del mes</div>
-    </div>
-    <div class="mc">
-      <div class="mc-label">Promedio diario</div>
-      <div class="mc-val purple" id="cur-avg">—</div>
-      <div class="mc-sub">m³/día</div>
-    </div>
-    <div class="mc">
-      <div class="mc-label">GNC Regalado $</div>
-      <div class="mc-val orange" id="cur-reg-pesos">—</div>
-      <div class="mc-sub">pesos acumulados</div>
-    </div>
-    <div class="mc">
-      <div class="mc-label">GNC Regalado Mts</div>
-      <div class="mc-val orange" id="cur-reg-mts">—</div>
-      <div class="mc-sub">m³ regalados</div>
+  <!-- VIEW TABS -->
+  <div class="flex items-center gap-2 mb-5">
+    <button class="view-tab active" id="tabMes" onclick="switchView('mes')">📅 Mes en Curso</button>
+    <button class="view-tab" id="tabHist" onclick="switchView('hist')">📊 Historial</button>
+    <div class="ml-auto flex items-center gap-2" id="loadingIndicator" style="display:none!important">
+      <div class="spinner"></div>
+      <span class="text-xs" style="color:var(--muted)">Cargando…</span>
     </div>
   </div>
 
-  <!-- aviso día parcial -->
-  <div id="partial-banner" style="display:none;background:rgba(245,166,35,.1);border:0.5px solid rgba(245,166,35,.35);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:12px;color:#f5a623">
-    ⚠️ <strong>Día en curso (<span id="partial-date"></span>):</strong> datos parciales no incluidos en métricas ni proyección hasta que el día esté cerrado.
-    <div id="partial-detail" style="margin-top:5px;color:#c8a060;font-size:11px"></div>
-  </div>
-
-  <!-- gráfico diario con proyección -->
-  <div class="card">
-    <div class="card-title">Ventas diarias m³ GNC — mes en curso <span class="badge badge-cyan">línea = proyección</span></div>
-    <div style="position:relative;width:100%;height:220px">
-      <canvas id="cCurDia" role="img" aria-label="Ventas diarias mes en curso con proyección">Ventas diarias mes en curso.</canvas>
+  <!-- ALERT -->
+  <div id="alertBanner" class="alert-box mb-4 hidden">
+    <div class="flex items-start gap-2">
+      <span class="text-orange-400 text-sm mt-px">⚠</span>
+      <div>
+        <span class="text-xs font-semibold text-orange-300" id="alertTitle"></span>
+        <span class="text-xs text-orange-200/70 ml-1" id="alertBody"></span>
+      </div>
     </div>
   </div>
 
-  <div class="grid2">
-    <!-- ranking playeros mes en curso -->
-    <div class="card">
-      <div class="card-title">Ranking playeros — mes en curso <span class="badge badge-cyan">proyectado</span></div>
-      <div class="legend">
-        <span><span class="leg-sq" style="background:#4a9eff"></span>Real m³</span>
-        <span><span class="leg-sq" style="background:rgba(34,211,238,.5)"></span>Proyectado</span>
-        <span><span class="leg-sq" style="background:#2fcb8d"></span>Aceite Lts</span>
-      </div>
-      <div id="curRankWrap" style="position:relative;width:100%;height:300px">
-        <canvas id="cCurRank" role="img" aria-label="Ranking playeros mes en curso">Ranking playeros mes en curso.</canvas>
-      </div>
-    </div>
+  <!-- ─── MES EN CURSO ─── -->
+  <div id="viewMes" class="fade-up">
 
-    <!-- turno mes en curso -->
-    <div class="card">
-      <div class="card-title">Distribución por turno — mes en curso</div>
-      <div class="donut-wrap" style="margin-top:8px">
-        <div style="position:relative;width:150px;height:150px;flex-shrink:0">
-          <canvas id="cCurTurno" role="img" aria-label="GNC por turno mes en curso">Turnos mes en curso.</canvas>
-        </div>
-        <div class="donut-leg" id="dlegCur"></div>
-      </div>
-      <div style="margin-top:16px">
-        <div class="card-title" style="margin-bottom:8px">m³ GNC real vs proyectado por turno</div>
-        <div style="position:relative;width:100%;height:120px">
-          <canvas id="cCurTurnoBar" role="img" aria-label="Real vs proyectado por turno">Real vs proyectado turno.</canvas>
+    <!-- FILTERS -->
+    <div class="flex flex-wrap items-center gap-3 mb-5 p-3 card">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-medium" style="color:var(--muted)">TURNO</span>
+        <div class="flex gap-1.5" id="filterTurno">
+          <span class="pill pill-cyan active" data-val="" onclick="setFilter('turno','',this)">Todos</span>
+          <span class="pill pill-blue" data-val="MAÑANA" onclick="setFilter('turno','MAÑANA',this)">Mañana</span>
+          <span class="pill pill-orange" data-val="TARDE" onclick="setFilter('turno','TARDE',this)">Tarde</span>
+          <span class="pill pill-purple" data-val="NOCHE" onclick="setFilter('turno','NOCHE',this)">Noche</span>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- GNC REGALADO POR TURNO -->
-  <div class="card">
-    <div class="card-title">GNC Regalado por turno — mes en curso</div>
-    <div class="legend">
-      <span><span class="leg-sq" style="background:var(--orange)"></span>GNC Regalado $</span>
-      <span><span class="leg-sq" style="background:rgba(255,123,61,.4)"></span>GNC Regalado Mts</span>
-    </div>
-    <div style="position:relative;width:100%;height:160px">
-      <canvas id="cCurRegTurno" role="img" aria-label="GNC Regalado por turno mes en curso">GNC Regalado por turno.</canvas>
-    </div>
-  </div>
-</div>
-
-<!-- ===== TAB: HISTÓRICO ===== -->
-<div id="view-history" style="display:none">
-  <div class="filters">
-    <div class="fg"><label>Mes</label><div class="pills" id="fg-mes"></div></div>
-    <div class="fg"><label>Turno</label><div class="pills" id="fg-turno"></div></div>
-    <div class="fg"><label>Playero</label><div class="pills" id="fg-playero"></div></div>
-  </div>
-
-  <div class="metrics">
-    <div class="mc"><div class="mc-label">Total m³ GNC</div><div class="mc-val blue" id="h-gnc">—</div><div class="mc-sub" id="h-gnc-s">—</div></div>
-    <div class="mc"><div class="mc-label">Promedio diario</div><div class="mc-val green" id="h-avg">—</div><div class="mc-sub">m³/día</div></div>
-    <div class="mc"><div class="mc-label">Lts aceite</div><div class="mc-val amber" id="h-ac">—</div><div class="mc-sub">total período</div></div>
-    <div class="mc"><div class="mc-label">Playero líder</div><div class="mc-val purple" id="h-lider" style="font-size:15px;letter-spacing:0">—</div><div class="mc-sub" id="h-lider-s">—</div></div>
-    <div class="mc"><div class="mc-label">GNC Regalado $</div><div class="mc-val orange" id="h-reg-pesos">—</div><div class="mc-sub">pesos acumulados</div></div>
-    <div class="mc"><div class="mc-label">GNC Regalado Mts</div><div class="mc-val orange" id="h-reg-mts">—</div><div class="mc-sub">m³ regalados</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Venta total GNC por día (m³)</div>
-    <div style="position:relative;width:100%;height:210px">
-      <canvas id="cDia" role="img" aria-label="Ventas diarias GNC histórico">Ventas diarias GNC.</canvas>
-    </div>
-  </div>
-
-  <div class="grid2">
-    <div class="card">
-      <div class="card-title">Ranking de playeros</div>
-      <div class="legend">
-        <span><span class="leg-sq" style="background:#4a9eff"></span>m³ GNC</span>
-        <span><span class="leg-sq" style="background:#2fcb8d"></span>Lts aceite</span>
+      <div class="w-px h-5" style="background:var(--border)"></div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-medium" style="color:var(--muted)">PLAYERO</span>
+        <select id="filterPlayero" onchange="applyMesFilters()" style="font-size:11px;padding:4px 8px">
+          <option value="">Todos</option>
+        </select>
       </div>
-      <div id="rankWrap" style="position:relative;width:100%;height:300px">
-        <canvas id="cRank" role="img" aria-label="Ranking playeros histórico">Ranking playeros.</canvas>
-      </div>
+      <div class="ml-auto text-xs mono" style="color:var(--muted)" id="mesInfo"></div>
     </div>
-    <div class="card">
-      <div class="card-title">Distribución por turno</div>
-      <div class="donut-wrap" style="margin-top:8px">
-        <div style="position:relative;width:150px;height:150px;flex-shrink:0">
-          <canvas id="cTurno" role="img" aria-label="GNC por turno histórico">Distribución turno.</canvas>
+
+    <!-- KPI GRID -->
+    <div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <!-- Daily trend -->
+      <div class="card p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <div class="font-semibold text-sm text-white" id="chartDailyTitle">Tendencia Diaria</div>
+            <div class="text-xs mt-0.5" style="color:var(--muted)">Solo días completamente cerrados (3 turnos)</div>
+          </div>
+          <div class="flex gap-2 flex-wrap" id="dailyLegend"></div>
         </div>
-        <div class="donut-leg" id="dleg"></div>
+        <div style="position:relative;height:220px"><canvas id="chartDaily"></canvas></div>
       </div>
-      <div style="margin-top:16px">
-        <div class="card-title" style="margin-bottom:8px">GNC acumulado por mes</div>
-        <div style="position:relative;width:100%;height:110px">
-          <canvas id="cMes" role="img" aria-label="GNC por mes">GNC por mes.</canvas>
+
+      <!-- Ranking -->
+      <div class="card p-5">
+        <div class="sec-title" id="rankTitle">Ranking de Playeros</div>
+        <div id="rankingList" class="space-y-3 overflow-y-auto" style="max-height:260px"></div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="card p-5">
+        <div class="sec-title">Distribución por Turno</div>
+        <div style="position:relative;height:180px"><canvas id="chartTurno"></canvas></div>
+        <div id="turnoLegend" class="mt-3 space-y-1.5"></div>
+      </div>
+      <div class="card p-5" id="chartExtra1Wrap">
+        <div class="sec-title" id="chartExtra1Title">Aceite Suelto por Turno</div>
+        <div style="position:relative;height:200px"><canvas id="chartExtra1"></canvas></div>
+      </div>
+      <div class="card p-5" id="chartExtra2Wrap">
+        <div class="sec-title" id="chartExtra2Title">GNC Regalado / Extras</div>
+        <div style="position:relative;height:200px"><canvas id="chartExtra2"></canvas></div>
+      </div>
+    </div>
+
+    <!-- DETAIL TABLE -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold text-sm text-white">Detalle por Jornada</div>
+        <span class="text-xs mono" style="color:var(--muted)" id="tableCount"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
+      </div>
+    </div>
+  </div><!-- end viewMes -->
+
+  <!-- ─── HISTORIAL ─── -->
+  <div id="viewHist" class="hidden fade-up">
+
+    <!-- HIST FILTERS — dropdown mes + filtros secundarios -->
+    <div class="card p-4 mb-5">
+
+      <!-- FILA 1: selector de mes -->
+      <div class="flex flex-wrap items-center gap-4 mb-4">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Período</span>
+          <!-- Pills de mes (se generan dinámicamente) -->
+          <div class="flex flex-wrap gap-1.5" id="histMesPills"></div>
+        </div>
+        <div class="ml-auto text-xs mono" style="color:var(--muted)" id="histInfo"></div>
+      </div>
+
+      <!-- FILA 2: filtros secundarios (turno + playero) -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+
+        <!-- Turno pills -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium uppercase tracking-wider" style="color:var(--muted)">Turno</span>
+          <div class="flex gap-1.5" id="histFilterTurno">
+            <span class="pill pill-cyan active" data-val="" onclick="setHistFilter('turno','',this)">Todos</span>
+            <span class="pill pill-blue"   data-val="MAÑANA" onclick="setHistFilter('turno','MAÑANA',this)">Mañana</span>
+            <span class="pill pill-orange" data-val="TARDE"  onclick="setHistFilter('turno','TARDE',this)">Tarde</span>
+            <span class="pill pill-purple" data-val="NOCHE"  onclick="setHistFilter('turno','NOCHE',this)">Noche</span>
+          </div>
+        </div>
+
+        <div style="width:1px;height:20px;background:var(--border)"></div>
+
+        <!-- Playero select -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium uppercase tracking-wider" style="color:var(--muted)">Playero</span>
+          <select id="histFilterPlayero" onchange="renderHist()" style="font-size:11px;padding:4px 10px">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <!-- Resumen rápido -->
+        <div id="histQuickStats" class="ml-auto flex gap-4"></div>
+      </div>
+    </div>
+
+    <!-- HIST KPIs -->
+    <div id="histKpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+
+    <!-- HIST CHARTS ROW 1 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <!-- Evolución mensual o diaria según selección -->
+      <div class="card p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-1">
+          <div class="font-semibold text-sm text-white" id="histChartMensualTitle">Evolución Mensual</div>
+          <span class="text-xs" style="color:var(--muted)" id="histChartMensualSub">Acumulado por mes</span>
+        </div>
+        <div style="position:relative;height:210px"><canvas id="histChartMensual"></canvas></div>
+      </div>
+      <!-- Ranking -->
+      <div class="card p-5">
+        <div class="sec-title">Ranking de Playeros</div>
+        <div id="histRankingList" class="space-y-3 overflow-y-auto" style="max-height:260px"></div>
+      </div>
+    </div>
+
+    <!-- HIST CHARTS ROW 2 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <!-- Distribución por turno -->
+      <div class="card p-5">
+        <div class="sec-title">Distribución por Turno</div>
+        <div style="position:relative;height:170px"><canvas id="histChartTurno"></canvas></div>
+        <div id="histTurnoLegend" class="mt-3 space-y-1.5"></div>
+      </div>
+      <!-- Auxiliar 1 -->
+      <div class="card p-5">
+        <div class="sec-title" id="histExtra1Title">Aceite por Turno</div>
+        <div style="position:relative;height:195px"><canvas id="histChartExtra"></canvas></div>
+      </div>
+      <!-- Auxiliar 2: tendencia diaria del mes seleccionado -->
+      <div class="card p-5">
+        <div class="sec-title" id="histDailyTitle">Detalle Diario del Período</div>
+        <div style="position:relative;height:195px"><canvas id="histChartDaily"></canvas></div>
+      </div>
+    </div>
+
+    <!-- HIST TABLE -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div class="font-semibold text-sm text-white">Detalle por Registro</div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs mono" style="color:var(--muted)" id="histTableCount"></span>
+          <!-- Vista agrupada vs detalle -->
+          <div class="flex gap-1.5">
+            <span class="pill pill-gray active" id="histTableViewDetail" onclick="setHistTableView('detail',this)">Por jornada</span>
+            <span class="pill pill-gray" id="histTableViewPlayero" onclick="setHistTableView('playero',this)">Por playero</span>
+            <span class="pill pill-gray" id="histTableViewDia" onclick="setHistTableView('dia',this)">Por día</span>
+          </div>
         </div>
       </div>
+      <div class="overflow-x-auto">
+        <table><thead id="histTableHead"></thead><tbody id="histTableBody"></tbody></table>
+      </div>
     </div>
-  </div>
 
-  <!-- GNC REGALADO POR TURNO HISTÓRICO -->
-  <div class="card">
-    <div class="card-title">GNC Regalado por turno — período seleccionado</div>
-    <div class="legend">
-      <span><span class="leg-sq" style="background:var(--orange)"></span>GNC Regalado $</span>
-      <span><span class="leg-sq" style="background:rgba(255,123,61,.4)"></span>GNC Regalado Mts</span>
-    </div>
-    <div style="position:relative;width:100%;height:160px">
-      <canvas id="cHRegTurno" role="img" aria-label="GNC Regalado por turno histórico">GNC Regalado por turno histórico.</canvas>
-    </div>
-  </div>
-</div>Datos: Google Sheets · Auto-actualización cada 5 min · <span id="footer-mes"></span></footer>
+  </div><!-- end viewHist -->
 
+</main>
+
+<!-- ═══════════════════ SCRIPT ═══════════════════ -->
 <script>
-const PROXY = 'https://script.google.com/macros/s/AKfycbybmBXSktVnanCMg6ddZRAiCtBR6aCZHahmLyX6QiuO_kibrqoFOINLvICMQWvtY2ZB/exec';
-const N = v => parseFloat(String(v).replace(/\$/g,'').replace(/\./g,'').replace(',','.').trim()) || 0;
-const MONTH_NAMES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const TURNO_COLORS = ['#4a9eff','#f5a623','#9b7fe8'];
-const TURNOS = ['Mañana','Tarde','Noche'];
+// ═══ CONSTANTS ═══
+const BASE_URL = "https://docs.google.com/spreadsheets/d/1Mi9g0qnBZRj70IdQl_6M1JxjMGRnyw1wOCh56D7cv64/gviz/tq?tqx=out:csv";
+const URL_GNC  = BASE_URL + "&sheet=Hoja%201";
+const URL_LIQ  = BASE_URL + "&sheet=Hoja%202%20liq";
 
-function monthLabel(f){ const [d,m,y]=f.split('-'); return MONTH_NAMES[+m]+' '+y.slice(2); }
-function parseDate(f){ const [d,m,y]=f.split('-').map(Number); return new Date(y,m-1,d); }
-function daysInMonth(f){ const [d,m,y]=f.split('-').map(Number); return new Date(y,m,0).getDate(); }
+// ═══ STATE ═══
+let MODULE  = 'gnc'; // 'gnc' | 'liq'
+let VIEW    = 'mes'; // 'mes' | 'hist'
+let RAW     = [];    // all parsed rows
 
-function parseCSV(txt){
-  const lines=txt.trim().split('\n');
-  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
-  return lines.slice(1).map(line=>{
-    const vals=[]; let cur='',inQ=false;
-    for(let c of line){ if(c==='"'){inQ=!inQ}else if(c===','&&!inQ){vals.push(cur);cur=''}else{cur+=c} }
-    vals.push(cur);
-    const row={};
-    headers.forEach((h,i)=>{ row[h]=(vals[i]||'').trim().replace(/^"|"$/g,''); });
+const filters = { turno: '', playero: '' };
+const histFilters = { mes: '__all__', turno: '', playero: '' };
+
+const CHARTS = {}; // chart registry
+
+// ═══ HELPERS ═══
+function N(v) {
+  if (v === null || v === undefined) return 0;
+  const s = String(v).replace(/\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.');
+  return parseFloat(s) || 0;
+}
+function fmt(n, dec=0) {
+  return (isNaN(n)?0:n).toLocaleString('es-AR',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtPesos(n) { return '$\u00a0' + fmt(Math.round(n)); }
+function fmtM3(n)    { return fmt(n) + ' m³'; }
+
+const MN = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function parseRowDate(s) {
+  if (!s) return null;
+  s = s.trim();
+  // DD-MM-YYYY or DD/MM/YYYY
+  const m1 = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+  if (m1) return new Date(+m1[3], +m1[2]-1, +m1[1]);
+  // YYYY-MM-DD
+  const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m2) return new Date(+m2[1], +m2[2]-1, +m2[3]);
+  return null;
+}
+function dateKey(d) {
+  if (!d) return '';
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function monthKey(d) {
+  if (!d) return '';
+  return MN[d.getMonth()+1] + ' ' + String(d.getFullYear()).slice(2);
+}
+function turnoNorm(t) {
+  if (!t) return '';
+  const u = t.toUpperCase().trim();
+  if (u.includes('MA') || u.includes('MN')) return 'MAÑANA';
+  if (u.includes('TA') || u.includes('TD')) return 'TARDE';
+  if (u.includes('NO') || u.includes('NC')) return 'NOCHE';
+  return u;
+}
+function turnoClass(t) {
+  if (t==='MAÑANA') return 't-m';
+  if (t==='TARDE')  return 't-t';
+  return 't-n';
+}
+function today() { const d=new Date(); d.setHours(0,0,0,0); return d; }
+
+function destroyChart(key) {
+  if (CHARTS[key]) { try { CHARTS[key].destroy(); } catch(e){} delete CHARTS[key]; }
+}
+
+// ═══ CSV PARSER ═══
+function parseCSV(txt) {
+  const lines = txt.trim().split('\n');
+  const headers = splitCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line => {
+    const vals = splitCSVLine(line);
+    const row = {};
+    headers.forEach((h,i) => { row[i] = (vals[i]||'').trim().replace(/^"|"$/g,''); row[h] = row[i]; });
     return row;
-  }).filter(r=>r['Fecha']&&r['Fecha'].match(/\d{2}-\d{2}-\d{4}/));
-}
-
-let ALL=[], selMes, selTurno, selPlayero;
-let charts={};
-let activeTab='current';
-
-function setTab(t){
-  activeTab=t;
-  document.getElementById('view-current').style.display=t==='current'?'block':'none';
-  document.getElementById('view-history').style.display=t==='history'?'block':'none';
-  document.getElementById('tab-current').classList.toggle('active',t==='current');
-  document.getElementById('tab-history').classList.toggle('active',t==='history');
-}
-
-async function loadData(){
-  document.getElementById('sdot').style.background='#f5a623';
-  document.getElementById('stxt').textContent='Actualizando…';
-  document.getElementById('err').style.display='none';
-  try{
-    const res=await fetch(PROXY);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const txt=await res.text();
-    ALL=parseCSV(txt).map(r=>({
-      f:r['Fecha'], m:monthLabel(r['Fecha']),
-      t:(r['Turno']||'').trim(),
-      p:(r['Playero (3F)']||'').trim(),
-      gnc:N(r['Venta Total GNC (14A)']),
-      ac:N(r['Lts aceite suelto']),
-      rp:N(r['GNC Regalado $$']),
-      rm:N(r['GNC Regalado Mts'])
-    })).filter(r=>r.gnc>0||r.ac>0||r.rp>0||r.rm>0);
-
-    const MESES=[...new Set(ALL.map(r=>r.m))];
-    const PLAYEROS=[...new Set(ALL.map(r=>r.p).filter(Boolean))].sort();
-
-    if(!selMes){ selMes=new Set(MESES); selTurno=new Set(TURNOS); selPlayero=new Set(PLAYEROS); }
-    else{ MESES.forEach(m=>selMes.add(m)); PLAYEROS.forEach(p=>selPlayero.add(p)); }
-
-    buildPills('fg-mes',MESES,selMes,'ob');
-    buildPills('fg-turno',TURNOS,selTurno,'oa');
-    buildPills('fg-playero',PLAYEROS,selPlayero,'og');
-
-    const now=new Date();
-    document.getElementById('last-update').textContent='Actualizado '+now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('sdot').style.background='#2fcb8d';
-    document.getElementById('stxt').textContent='En vivo';
-    renderCurrent();
-    renderHistory();
-  }catch(e){
-    document.getElementById('sdot').style.background='#f05050';
-    document.getElementById('stxt').textContent='Error';
-    document.getElementById('last-update').textContent='No se pudo cargar';
-    const el=document.getElementById('err');
-    el.style.display='block';
-    el.textContent='No se pudieron cargar los datos. ('+e.message+')';
-  }
-}
-
-// ===== CURRENT MONTH =====
-function todayStr(){
-  const t=new Date();
-  return String(t.getDate()).padStart(2,'0')+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+t.getFullYear();
-}
-
-function getCurrentMonthData(){
-  if(!ALL.length) return {closed:[],partial:[],latestM:''};
-  const sorted=[...ALL].sort((a,b)=>parseDate(b.f)-parseDate(a.f));
-  const latestM=sorted[0].m;
-  document.getElementById('footer-mes').textContent='Mes en curso: '+latestM;
-  document.getElementById('tab-current').textContent='📅 '+latestM;
-  const monthAll=ALL.filter(r=>r.m===latestM);
-  const today=todayStr();
-  // closed = dates strictly before today
-  const closed=monthAll.filter(r=>parseDate(r.f)<parseDate(today));
-  // partial = rows whose date equals today
-  const partial=monthAll.filter(r=>r.f===today);
-  return {closed, partial, latestM};
-}
-
-function renderCurrent(){
-  const {closed, partial}=getCurrentMonthData();
-  if(!closed.length && !partial.length) return;
-
-  // ---- PARTIAL DAY BANNER ----
-  const banner=document.getElementById('partial-banner');
-  if(partial.length){
-    const partGNC=partial.reduce((s,r)=>s+r.gnc,0);
-    const partAC=Math.round(partial.reduce((s,r)=>s+r.ac,0)*10)/10;
-    const partRP=partial.reduce((s,r)=>s+r.rp,0);
-    const partRM=partial.reduce((s,r)=>s+r.rm,0);
-    const turnos=partial.map(r=>r.t).join(', ');
-    banner.style.display='block';
-    document.getElementById('partial-date').textContent=todayStr().slice(0,5);
-    document.getElementById('partial-detail').textContent=
-      'Turnos cargados: '+turnos+' · '+partGNC.toLocaleString('es-AR')+' m³ GNC · '+partAC+' L aceite'
-      +(partRP?(' · $'+partRP.toLocaleString('es-AR')+' regalado'):'')+' (excluidos del análisis)';
-  } else {
-    banner.style.display='none';
-  }
-
-  // ---- USE ONLY CLOSED DAYS FOR METRICS & PROJECTION ----
-  const data=closed;
-  if(!data.length){ 
-    ['cur-gnc','cur-ac','cur-dias','cur-avg'].forEach(id=>document.getElementById(id).textContent='Sin días cerrados');
-    return;
-  }
-
-  const totalGNC=data.reduce((s,r)=>s+r.gnc,0);
-  const totalAC=Math.round(data.reduce((s,r)=>s+r.ac,0)*10)/10;
-  const diasData=[...new Set(data.map(r=>r.f))];
-  const dias=diasData.length;
-  const avg=dias?Math.round(totalGNC/dias):0;
-
-  // days in month
-  const sampleF=data[0].f;
-  const totalDias=daysInMonth(sampleF);
-  const pct=Math.round(dias/totalDias*100);
-  const proyGNC=dias?Math.round(avg*totalDias):0;
-  const proyAC=dias?Math.round((totalAC/dias)*totalDias*10)/10:0;
-
-  document.getElementById('cur-gnc').textContent=totalGNC.toLocaleString('es-AR');
-  document.getElementById('cur-gnc-proj').textContent='Proyección al cierre: '+proyGNC.toLocaleString('es-AR')+' m³';
-  document.getElementById('cur-gnc-pct-l').textContent=pct+'% del mes';
-  document.getElementById('cur-gnc-days').textContent=dias+'/'+totalDias+' días cerrados';
-  document.getElementById('cur-gnc-bar').style.width=pct+'%';
-  document.getElementById('cur-ac').textContent=totalAC.toLocaleString('es-AR')+' L';
-  document.getElementById('cur-ac-proj').textContent='Proyección al cierre: '+proyAC.toLocaleString('es-AR')+' L';
-  document.getElementById('cur-dias').textContent=dias;
-  document.getElementById('cur-dias-sub').textContent='de '+totalDias+' días del mes';
-  document.getElementById('cur-avg').textContent=avg.toLocaleString('es-AR');
-
-  // ---- NEW: GNC REGALADO KPIs (closed days only) ----
-  const totalRP=data.reduce((s,r)=>s+r.rp,0);
-  const totalRM=data.reduce((s,r)=>s+r.rm,0);
-  document.getElementById('cur-reg-pesos').textContent='$ '+Math.round(totalRP).toLocaleString('es-AR');
-  document.getElementById('cur-reg-mts').textContent=Math.round(totalRM).toLocaleString('es-AR');
-
-  // daily chart — closed bars + partial bar dimmed + trend line + regalado orange line
-  const dailyMap={};
-  const dailyRegMap={};
-  data.forEach(r=>{ 
-    if(!dailyMap[r.f])dailyMap[r.f]=0; dailyMap[r.f]+=r.gnc;
-    if(!dailyRegMap[r.f])dailyRegMap[r.f]=0; dailyRegMap[r.f]+=r.rp;
   });
-  // add partial day separately
-  const partialMap={};
-  partial.forEach(r=>{ if(!partialMap[r.f])partialMap[r.f]=0; partialMap[r.f]+=r.gnc; });
+}
+function splitCSVLine(line) {
+  const r=[]; let cur='', inQ=false;
+  for (const c of line) {
+    if (c==='"') { inQ=!inQ; }
+    else if (c===',' && !inQ) { r.push(cur); cur=''; }
+    else { cur+=c; }
+  }
+  r.push(cur);
+  return r;
+}
 
-  const allDates=[...new Set([...Object.keys(dailyMap),...Object.keys(partialMap)])].sort((a,b)=>parseDate(a)-parseDate(b));
-  const dKeys=Object.keys(dailyMap).sort((a,b)=>parseDate(a)-parseDate(b));
-  const dLabels=allDates.map(d=>d.slice(0,5));
-  const dData=allDates.map(d=>dailyMap[d]||null);
-  const dDataPartial=allDates.map(d=>partialMap[d]||null);
-  const dDataReg=allDates.map(d=>dailyRegMap[d]||null);
+// ═══ DATA LOADING ═══
+async function loadData(url) {
+  const res = await fetch(url + '&nocache=' + Date.now());
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.text();
+}
 
-  // linear regression on CLOSED days only
-  const closedVals=dKeys.map(d=>dailyMap[d]);
-  const n=closedVals.length;
-  const xs=closedVals.map((_,i)=>i);
-  const xMean=xs.reduce((a,b)=>a+b,0)/n;
-  const yMean=closedVals.reduce((a,b)=>a+b,0)/n;
-  const denom=xs.reduce((s,x)=>s+(x-xMean)**2,0);
-  const slope=denom?xs.reduce((s,x,i)=>s+(x-xMean)*(closedVals[i]-yMean),0)/denom:0;
-  const intercept=yMean-slope*xMean;
+function parseGNC(rows) {
+  return rows.map(r => {
+    const d = parseRowDate(r[0]);
+    if (!d || !r[1]) return null;
+    const turno = turnoNorm(r[1]);
+    if (!turno) return null;
+    return {
+      date:    d,
+      dateKey: dateKey(d),
+      monthKey: monthKey(d),
+      turno,
+      playero: (r[2]||'').trim(),
+      gnc:     N(r[3]),
+      efGNC:   N(r[4]),
+      aceites: N(r[5]),
+      varios:  N(r[6]),
+      extraGNC:N(r[7]),
+      regPesos:N(r[12]),
+      regMts:  N(r[13]),
+      acSuelto:N(r[11]),
+    };
+  }).filter(Boolean);
+}
 
-  // build full label array: closed days + partial (if any) + future days to end of month
-  const extLabels=[...dLabels];
-  const extBar=[...dData];
-  const extPartial=[...dDataPartial];
-  const extReg=[...dDataReg];
-  const extTrend=allDates.map((_,i)=>Math.max(0,Math.round(intercept+slope*i)));
-  const [,mm2,yy2]=dKeys[dKeys.length-1].split('-').map(Number);
-  const lastClosedDay=parseDate(dKeys[dKeys.length-1]).getDate();
-  const startFrom=partial.length?parseDate(todayStr()).getDate()+1:lastClosedDay+1;
-  let dayIdx=allDates.length;
-  for(let d=startFrom;d<=totalDias;d++){
-    const lbl=String(d).padStart(2,'0')+'-'+String(mm2).padStart(2,'0');
-    extLabels.push(lbl);
-    extBar.push(null);
-    extPartial.push(null);
-    extReg.push(null);
-    extTrend.push(Math.max(0,Math.round(intercept+slope*dayIdx)));
-    dayIdx++;
+function parseLIQ(rows) {
+  return rows.map(r => {
+    const d = parseRowDate(r[0]);
+    if (!d || !r[1]) return null;
+    const turno = turnoNorm(r[1]);
+    if (!turno) return null;
+    return {
+      date:    d,
+      dateKey: dateKey(d),
+      monthKey: monthKey(d),
+      turno,
+      playero:  (r[2]||'').trim(),
+      playero2: (r[3]||'').trim(),
+      heladera: N(r[4]),
+      varios:   N(r[5]),
+      acLts:    N(r[6]),
+      liqTotal: N(r[14]),
+      // additional cols for later
+      recaudado:N(r[11]),
+    };
+  }).filter(Boolean);
+}
+
+// ═══ CLOSED DAYS LOGIC ═══
+// A day is "closed" if it has MAÑANA + TARDE + NOCHE all present
+function closedDays(rows) {
+  const map = {};
+  rows.forEach(r => {
+    if (!map[r.dateKey]) map[r.dateKey] = new Set();
+    map[r.dateKey].add(r.turno);
+  });
+  const closed = new Set();
+  Object.entries(map).forEach(([dk, turnos]) => {
+    if (turnos.has('MAÑANA') && turnos.has('TARDE') && turnos.has('NOCHE')) closed.add(dk);
+  });
+  return closed;
+}
+
+// Current month: rows from current month only, closed days only
+function getCurrentMonthRows(rows) {
+  const t = today();
+  const curY = t.getFullYear();
+  const curM = t.getMonth();
+  const thisMonth = rows.filter(r => r.date.getFullYear()===curY && r.date.getMonth()===curM);
+  const closed = closedDays(thisMonth);
+  return thisMonth.filter(r => closed.has(r.dateKey));
+}
+
+// Historical: everything EXCEPT current month
+function getHistRows(rows) {
+  const t = today();
+  const curY = t.getFullYear();
+  const curM = t.getMonth();
+  return rows.filter(r => !(r.date.getFullYear()===curY && r.date.getMonth()===curM));
+}
+
+// ═══ PRORATING LOGIC ═══
+// Build a map of dateKey+turno → unique playeros count, for equitable distribution
+function buildProrateMap(rows) {
+  const map = {};
+  rows.forEach(r => {
+    const k = r.dateKey + '|' + r.turno;
+    if (!map[k]) map[k] = new Set();
+    if (r.playero)  map[k].add(r.playero);
+    if (r.playero2) map[k].add(r.playero2);
+  });
+  const result = {};
+  Object.entries(map).forEach(([k,s]) => { result[k] = Math.max(1, s.size); });
+  return result;
+}
+
+function prorateShare(row, prorateMap) {
+  const k = row.dateKey + '|' + row.turno;
+  return prorateMap[k] || 1;
+}
+
+// ═══ AGGREGATION ═══
+function aggregate(rows, filterFn) {
+  const filtered = rows.filter(filterFn || (()=>true));
+  const pm = buildProrateMap(rows); // use full rows for prorating
+
+  const totals = { gnc:0, efGNC:0, aceites:0, varios:0, extraGNC:0, regPesos:0, regMts:0, acSuelto:0,
+                   heladera:0, liqTotal:0, acLts:0 };
+  filtered.forEach(r => {
+    const share = prorateShare(r, pm);
+    totals.gnc      += r.gnc || 0;
+    totals.efGNC    += r.efGNC || 0;
+    totals.aceites  += r.aceites || 0;
+    totals.varios   += r.varios || 0;
+    totals.extraGNC += r.extraGNC || 0;
+    totals.regPesos += r.regPesos || 0;
+    totals.regMts   += r.regMts || 0;
+    totals.acSuelto += r.acSuelto || 0;
+    totals.heladera += r.heladera || 0;
+    totals.liqTotal += r.liqTotal || 0;
+    totals.acLts    += r.acLts || 0;
+  });
+  return { totals, filtered, count: filtered.length };
+}
+
+// Ranking: prorated per playero
+function buildRanking(rows) {
+  const pm = buildProrateMap(rows);
+  const map = {};
+  rows.forEach(r => {
+    const share = prorateShare(r, pm);
+    const players = [r.playero, r.playero2].filter(Boolean);
+    if (!players.length) players.push('(sin nombre)');
+    players.forEach(p => {
+      if (!map[p]) map[p] = { gnc:0, acSuelto:0, acLts:0, heladera:0, liqTotal:0, turnos:0 };
+      map[p].gnc      += (r.gnc||0)      / share;
+      map[p].acSuelto += (r.acSuelto||0) / share;
+      map[p].acLts    += (r.acLts||0)    / share;
+      map[p].heladera += (r.heladera||0) / share;
+      map[p].liqTotal += (r.liqTotal||0) / share;
+      map[p].turnos   += 1/share;
+    });
+  });
+  return Object.entries(map)
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a,b) => (MODULE==='gnc' ? b.gnc - a.gnc : b.liqTotal - a.liqTotal));
+}
+
+// ═══ MODULE SWITCH ═══
+function switchModule(mod) {
+  MODULE = mod;
+  document.getElementById('btnGNC').className = 'mod-tab' + (mod==='gnc' ? ' active-gnc' : '');
+  document.getElementById('btnLIQ').className = 'mod-tab' + (mod==='liq' ? ' active-liq' : '');
+  refresh();
+}
+
+// ═══ VIEW SWITCH ═══
+function switchView(v) {
+  VIEW = v;
+  document.getElementById('tabMes').classList.toggle('active', v==='mes');
+  document.getElementById('tabHist').classList.toggle('active', v==='hist');
+  document.getElementById('viewMes').classList.toggle('hidden', v!=='mes');
+  document.getElementById('viewHist').classList.toggle('hidden', v!=='hist');
+  if (RAW.length) { v==='mes' ? renderMes() : renderHist(); }
+}
+
+// ═══ FILTERS ═══
+function setFilter(type, val, el) {
+  filters[type] = val;
+  const parent = el.closest('[id^=filter]');
+  parent.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderMes();
+}
+function setHistFilter(type, val, el) {
+  histFilters[type] = val;
+  const parent = el.closest('[id^=histFilter]');
+  parent.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderHist();
+}
+function applyMesFilters() {
+  filters.playero = document.getElementById('filterPlayero').value;
+  renderMes();
+}
+
+function buildPlayeroSelect(rows, selId) {
+  const players = [...new Set(rows.map(r => r.playero).filter(Boolean))].sort();
+  const sel = document.getElementById(selId);
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + players.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if (prev && players.includes(prev)) sel.value = prev;
+}
+
+// ═══ CHART HELPERS ═══
+const CH_DEFAULTS = {
+  plugins: { legend: { display: false }, tooltip: {
+    backgroundColor: '#0f1a2e', borderColor: '#1e2d45', borderWidth: 1,
+    titleColor: '#e2e8f0', bodyColor: '#94a3b8', padding: 10,
+    callbacks: {}
+  }},
+  scales: {
+    x: { ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 40, autoSkip: true }, grid: { color: 'rgba(255,255,255,.04)' } },
+    y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.06)' } }
+  },
+  responsive: true, maintainAspectRatio: false, animation: { duration: 400 }
+};
+
+function mkChart(key, el, cfg) {
+  destroyChart(key);
+  CHARTS[key] = new Chart(document.getElementById(el), cfg);
+  return CHARTS[key];
+}
+
+// ═══ RENDER MES ═══
+function renderMes() {
+  if (!RAW.length) return;
+  const curRows = getCurrentMonthRows(RAW);
+  buildPlayeroSelect(curRows, 'filterPlayero');
+
+  const filterFn = r =>
+    (!filters.turno   || r.turno===filters.turno) &&
+    (!filters.playero || r.playero===filters.playero || r.playero2===filters.playero);
+
+  const { totals, filtered } = aggregate(curRows, filterFn);
+
+  const dias = [...new Set(curRows.map(r=>r.dateKey))].length;
+  const diasFilt = [...new Set(filtered.map(r=>r.dateKey))].length;
+
+  // Module-specific info text
+  const t = today();
+  document.getElementById('mesInfo').textContent =
+    `${MN[t.getMonth()+1]} ${t.getFullYear()} · ${dias} días cerrados · ${filtered.length} registros`;
+
+  // ── KPIs ──
+  renderKPIs('kpiGrid', totals, diasFilt, curRows.length);
+
+  // ── Alert: partial day ──
+  const allForMonth = RAW.filter(r => r.date.getFullYear()===t.getFullYear() && r.date.getMonth()===t.getMonth());
+  const closedSet = closedDays(allForMonth);
+  const todayKey = dateKey(t);
+  const todayRows = allForMonth.filter(r=>r.dateKey===todayKey);
+  const ab = document.getElementById('alertBanner');
+  if (todayRows.length && !closedSet.has(todayKey)) {
+    ab.classList.remove('hidden');
+    const turnos = [...new Set(todayRows.map(r=>r.turno))].join(', ');
+    document.getElementById('alertTitle').textContent = `Día en curso (${todayKey}):`;
+    document.getElementById('alertBody').textContent =
+      `datos parciales excluidos del análisis. Turno${todayRows.length>1?'s':''} cargado${todayRows.length>1?'s':''}: ${turnos}. Se incluirá al cerrar el turno NOCHE.`;
+  } else {
+    ab.classList.add('hidden');
   }
 
-  const chartCfg={type:'bar',data:{labels:extLabels,datasets:[
-    {label:'Real m³',data:extBar,backgroundColor:'#1e6fd4',hoverBackgroundColor:'#4a9eff',borderRadius:3,borderSkipped:false,order:2},
-    {label:'Parcial (hoy)',data:extPartial,backgroundColor:'rgba(245,166,35,.4)',hoverBackgroundColor:'rgba(245,166,35,.7)',borderRadius:3,borderSkipped:false,order:2},
-    {label:'Tendencia',data:extTrend,type:'line',borderColor:'#22d3ee',borderWidth:2,pointRadius:0,fill:false,tension:.3,borderDash:[4,3],order:1},
-    {label:'GNC Regalado $',data:extReg,type:'line',borderColor:'#ff7b3d',borderWidth:2,pointRadius:2,pointBackgroundColor:'#ff7b3d',fill:false,tension:.3,order:1,yAxisID:'y2'}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a7f92',font:{size:10},boxWidth:10,filter:i=>i.text!=='Parcial (hoy)'||partial.length>0}},tooltip:{callbacks:{label:c=>{if(c.dataset.yAxisID==='y2')return ' GNC Regalado $: $'+Math.round(c.parsed.y).toLocaleString('es-AR');return c.dataset.label+': '+(c.parsed.y||0).toLocaleString('es-AR')+' m³';}}}},scales:{x:{ticks:{font:{size:9},maxRotation:45,autoSkip:true,color:'#7a7f92'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{font:{size:10},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}},y2:{position:'right',ticks:{font:{size:9},color:'#ff7b3d',callback:v=>'$'+v.toLocaleString('es-AR')},grid:{display:false}}}}};
+  // ── Daily chart ──
+  renderDailyChart(curRows, filterFn);
 
-  if(charts.curDia){charts.curDia.data=chartCfg.data;charts.curDia.update();}
-  else charts.curDia=new Chart(document.getElementById('cCurDia'),chartCfg);
+  // ── Ranking ──
+  renderRanking('rankingList', curRows.filter(filterFn));
 
-  // ranking playeros — closed days only, projection to end of month
-  const byP={};
-  data.forEach(r=>{ if(!byP[r.p]){byP[r.p]={gnc:0,ac:0};} byP[r.p].gnc+=r.gnc; byP[r.p].ac+=r.ac; });
-  const sortedP=Object.entries(byP).sort((a,b)=>b[1].gnc-a[1].gnc);
-  const pNames=sortedP.map(e=>e[0]);
-  const pReal=sortedP.map(e=>e[1].gnc);
-  const pProj=sortedP.map(e=>dias?Math.max(0,Math.round(e[1].gnc/dias*totalDias)-e[1].gnc):0);
-  const pAC=sortedP.map(e=>Math.round(e[1].ac*10)/10);
-  const rh=Math.max(pNames.length*50+80,200);
-  document.getElementById('curRankWrap').style.height=rh+'px';
+  // ── Turno donut ──
+  renderTurnoDonut('chartTurno', 'turnoLegend', curRows.filter(filterFn));
 
-  const rankCfg={type:'bar',data:{labels:pNames,datasets:[
-    {label:'Real m³',data:pReal,backgroundColor:'#1e6fd4',borderRadius:[3,0,0,3],borderSkipped:false,xAxisID:'x1',stack:'gnc'},
-    {label:'Proyectado adicional',data:pProj,backgroundColor:'rgba(34,211,238,.25)',borderRadius:[0,3,3,0],borderSkipped:false,xAxisID:'x1',stack:'gnc'},
-    {label:'Lts aceite',data:pAC,backgroundColor:'#1a8060',hoverBackgroundColor:'#2fcb8d',borderRadius:3,borderSkipped:false,xAxisID:'x2'}
-  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{if(c.datasetIndex===0)return ' Real: '+c.parsed.x.toLocaleString('es-AR')+' m³';if(c.datasetIndex===1)return ' Proy. adicional: +'+c.parsed.x.toLocaleString('es-AR')+' m³';return ' Aceite: '+c.parsed.x.toFixed(1)+' L';}}}},scales:{y:{ticks:{font:{size:12},color:'#c8cad4'},grid:{display:false}},x1:{position:'top',stacked:true,ticks:{font:{size:9},color:'#4a9eff',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(74,158,255,.08)'},title:{display:true,text:'m³ GNC',font:{size:9},color:'#4a9eff'}},x2:{position:'bottom',ticks:{font:{size:9},color:'#2fcb8d',callback:v=>v.toFixed(1)},grid:{display:false},title:{display:true,text:'Lts aceite',font:{size:9},color:'#2fcb8d'}}}}};
+  // ── Extra charts ──
+  renderExtraCharts(curRows.filter(filterFn));
 
-  if(charts.curRank){charts.curRank.data=rankCfg.data;charts.curRank.update();}
-  else charts.curRank=new Chart(document.getElementById('cCurRank'),rankCfg);
+  // ── Table ──
+  renderTable(filtered);
+}
 
-  // turno donut — closed days only
-  const tData=TURNOS.map(t=>data.filter(r=>r.t===t||r.t.toLowerCase()===t.toLowerCase()).reduce((s,r)=>s+r.gnc,0));
-  const tTotal=tData.reduce((a,b)=>a+b,0);
-  if(charts.curTurno){charts.curTurno.data.datasets[0].data=tData;charts.curTurno.update();}
-  else charts.curTurno=new Chart(document.getElementById('cCurTurno'),{type:'doughnut',data:{labels:TURNOS,datasets:[{data:tData,backgroundColor:TURNO_COLORS,borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.label+': '+c.parsed.toLocaleString('es-AR')+' m³'}}}}});
+function renderKPIs(gridId, totals, dias, total) {
+  const grid = document.getElementById(gridId);
 
-  document.getElementById('dlegCur').innerHTML=TURNOS.map((l,i)=>{
-    const pct2=tTotal?Math.round(tData[i]/tTotal*100):0;
-    return `<div class="donut-leg-row"><span class="leg-sq" style="background:${TURNO_COLORS[i]}"></span><span style="color:#e8eaf0">${l}</span><span>${pct2}% · ${tData[i].toLocaleString('es-AR')}</span></div>`;
+  // ── Projection logic ──
+  // Only apply projection on the "mes en curso" KPI grid (not historial)
+  const isMes = gridId === 'kpiGrid';
+  const t = today();
+  const diasEnMes = new Date(t.getFullYear(), t.getMonth()+1, 0).getDate(); // total days in month
+  // Projection: (acumulado / días cerrados) * días totales del mes
+  function proy(val) {
+    if (!isMes || !dias) return null;
+    return Math.round(val / dias * diasEnMes);
+  }
+  function proyL(val) {
+    if (!isMes || !dias) return null;
+    return Math.round(val / dias * diasEnMes * 10) / 10;
+  }
+  const pct = isMes && diasEnMes ? Math.round(dias / diasEnMes * 100) : null;
+
+  let cards = [];
+  if (MODULE === 'gnc') {
+    const avgGNC = dias ? Math.round(totals.gnc / dias) : 0;
+    const prGNC  = proy(totals.gnc);
+    const prAc   = proyL(totals.acSuelto);
+    const prReg  = proy(totals.regPesos);
+    const prExt  = proy(totals.extraGNC + totals.varios);
+    cards = [
+      {
+        label: 'm³ GNC Acumulado',
+        val:   fmtM3(totals.gnc),
+        sub:   `Prom ${fmt(avgGNC)} m³/día`,
+        proy:  prGNC !== null ? `→ cierre estimado: ${fmt(prGNC)} m³` : null,
+        color: '#3b82f6', prog: totals.gnc
+      },
+      {
+        label: 'Aceite Suelto',
+        val:   fmt(totals.acSuelto, 1) + ' L',
+        sub:   'litros de aceite suelto',
+        proy:  prAc !== null ? `→ cierre estimado: ${fmt(prAc, 1)} L` : null,
+        color: '#22c55e', prog: totals.acSuelto
+      },
+      {
+        label: 'GNC Regalado $',
+        val:   fmtPesos(totals.regPesos),
+        sub:   fmt(totals.regMts) + ' m³ en cortesías',
+        proy:  prReg !== null ? `→ cierre estimado: ${fmtPesos(prReg)}` : null,
+        color: '#f97316', prog: totals.regPesos
+      },
+      {
+        label: 'Extra GNC / Varios',
+        val:   fmtPesos(totals.extraGNC + totals.varios),
+        sub:   fmtPesos(totals.efGNC) + ' efectivo GNC',
+        proy:  prExt !== null ? `→ cierre estimado: ${fmtPesos(prExt)}` : null,
+        color: '#a78bfa', prog: totals.extraGNC
+      },
+    ];
+  } else {
+    const avgLiq = dias ? totals.liqTotal / dias : 0;
+    const prLiq  = proyL(totals.liqTotal);
+    const prAc   = proyL(totals.acLts);
+    const prHel  = proy(totals.heladera);
+    const prVar  = proy(totals.varios);
+    cards = [
+      {
+        label: 'Total Liq. (Lts)',
+        val:   fmt(totals.liqTotal, 1) + ' L',
+        sub:   `Prom ${fmt(avgLiq, 1)} L/día`,
+        proy:  prLiq !== null ? `→ cierre estimado: ${fmt(prLiq, 1)} L` : null,
+        color: '#22d3ee', prog: totals.liqTotal
+      },
+      {
+        label: 'Aceite / Lubric.',
+        val:   fmt(totals.acLts, 1) + ' L',
+        sub:   'litros de lubricantes',
+        proy:  prAc !== null ? `→ cierre estimado: ${fmt(prAc, 1)} L` : null,
+        color: '#22c55e', prog: totals.acLts
+      },
+      {
+        label: 'Ventas Heladera',
+        val:   fmtPesos(totals.heladera),
+        sub:   `${dias} días cerrados`,
+        proy:  prHel !== null ? `→ cierre estimado: ${fmtPesos(prHel)}` : null,
+        color: '#f97316', prog: totals.heladera
+      },
+      {
+        label: 'Ventas Varios',
+        val:   fmtPesos(totals.varios),
+        sub:   'acumulado período',
+        proy:  prVar !== null ? `→ cierre estimado: ${fmtPesos(prVar)}` : null,
+        color: '#a78bfa', prog: totals.varios
+      },
+    ];
+  }
+
+  const maxProg = Math.max(...cards.map(c => c.prog), 1);
+  const progBar = isMes && pct !== null
+    ? `<div class="prog-track" style="margin-top:6px">
+         <div class="prog-fill" style="width:${pct}%;background:rgba(255,255,255,.15)"></div>
+       </div>
+       <div style="display:flex;justify-content:space-between;margin-top:3px">
+         <span style="font-size:10px;color:var(--muted)">${dias}/${diasEnMes} días</span>
+         <span style="font-size:10px;color:var(--muted)">${pct}% del mes</span>
+       </div>`
+    : '';
+
+  grid.innerHTML = cards.map(c => {
+    // Strip prefix "→ cierre estimado: " to get just the raw projected value
+    const proyVal = c.proy ? c.proy.replace(/^→ cierre estimado:\s*/i, '') : null;
+
+    if (isMes && proyVal) {
+      // ── MES EN CURSO: cierre estimado GRANDE, acumulado PEQUEÑO ──
+      return `
+      <div class="kpi-card">
+        <div class="kpi-label">${c.label}</div>
+
+        <!-- Acumulado: pequeño, rol de referencia -->
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px">
+          <span style="font-size:13px;font-weight:600;color:${c.color};opacity:.65;font-family:'JetBrains Mono',monospace">${c.val}</span>
+          <span style="font-size:10px;color:var(--muted)">acumulado</span>
+        </div>
+
+        <!-- Promedio/sub -->
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${c.sub}</div>
+
+        <!-- Cierre estimado: GRANDE, protagonista -->
+        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${c.color};opacity:.55;margin-bottom:3px">Cierre estimado</div>
+        <div class="kpi-val" style="color:${c.color};font-size:22px">${proyVal}</div>
+
+        <!-- Barra de progreso del mes -->
+        <div class="prog-track" style="margin-top:10px">
+          <div class="prog-fill" style="width:${pct}%;background:${c.color}"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:var(--muted)">${dias}/${diasEnMes} días cerrados</span>
+          <span style="font-size:10px;color:${c.color};opacity:.7;font-weight:600">${pct}%</span>
+        </div>
+      </div>`;
+    } else {
+      // ── HISTORIAL o sin proyección: layout original ──
+      return `
+      <div class="kpi-card">
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-val" style="color:${c.color}">${c.val}</div>
+        <div class="kpi-sub">${c.sub}</div>
+        <div class="prog-track" style="margin-top:8px">
+          <div class="prog-fill" style="width:${Math.min(100,Math.round(c.prog/maxProg*100))}%;background:${c.color}"></div>
+        </div>
+      </div>`;
+    }
   }).join('');
-
-  // turno real vs proyectado bar
-  const tReal=tData;
-  const tProj=tData.map(v=>dias?Math.round(v/dias*totalDias):0);
-  const turnoBarCfg={type:'bar',data:{labels:TURNOS,datasets:[
-    {label:'Real',data:tReal,backgroundColor:'rgba(74,158,255,.7)',borderRadius:4,borderSkipped:false},
-    {label:'Proyectado',data:tProj,backgroundColor:'rgba(34,211,238,.25)',borderRadius:4,borderSkipped:false,borderWidth:1,borderColor:'rgba(34,211,238,.5)'}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a7f92',font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10},color:'#7a7f92'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}}}}};
-
-  if(charts.curTurnoBar){charts.curTurnoBar.data=turnoBarCfg.data;charts.curTurnoBar.update();}
-  else charts.curTurnoBar=new Chart(document.getElementById('cCurTurnoBar'),turnoBarCfg);
-
-  // ---- NEW: GNC REGALADO POR TURNO chart ----
-  const tRegP=TURNOS.map(t=>data.filter(r=>r.t===t||r.t.toLowerCase()===t.toLowerCase()).reduce((s,r)=>s+r.rp,0));
-  const tRegM=TURNOS.map(t=>data.filter(r=>r.t===t||r.t.toLowerCase()===t.toLowerCase()).reduce((s,r)=>s+r.rm,0));
-  const regTurnoCfg={type:'bar',data:{labels:TURNOS,datasets:[
-    {label:'GNC Regalado $',data:tRegP,backgroundColor:'rgba(255,123,61,.8)',hoverBackgroundColor:'#ff7b3d',borderRadius:4,borderSkipped:false,yAxisID:'yp'},
-    {label:'GNC Regalado Mts',data:tRegM,backgroundColor:'rgba(255,123,61,.3)',hoverBackgroundColor:'rgba(255,123,61,.5)',borderRadius:4,borderSkipped:false,yAxisID:'ym'}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a7f92',font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10},color:'#7a7f92'},grid:{display:false}},yp:{position:'left',ticks:{font:{size:9},color:'#ff7b3d',callback:v=>'$'+v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'},title:{display:true,text:'Pesos $',font:{size:9},color:'#ff7b3d'}},ym:{position:'right',ticks:{font:{size:9},color:'rgba(255,123,61,.7)',callback:v=>v.toLocaleString('es-AR')+' m³'},grid:{display:false},title:{display:true,text:'Mts³',font:{size:9},color:'rgba(255,123,61,.7)'}}}}};
-  if(charts.curRegTurno){charts.curRegTurno.data=regTurnoCfg.data;charts.curRegTurno.update();}
-  else charts.curRegTurno=new Chart(document.getElementById('cCurRegTurno'),regTurnoCfg);
 }
 
-// ===== HISTORY =====
-function filtered(){
-  return ALL.filter(r=>selMes&&selMes.has(r.m)&&selTurno&&selTurno.has(r.t)&&r.p&&selPlayero&&selPlayero.has(r.p));
+function renderDailyChart(rows, filterFn) {
+  const filtered = rows.filter(filterFn);
+  const dm = {}, dm2 = {};
+  filtered.forEach(r => {
+    dm[r.dateKey]  = (dm[r.dateKey]||0)  + (MODULE==='gnc' ? r.gnc : r.liqTotal);
+    dm2[r.dateKey] = (dm2[r.dateKey]||0) + (MODULE==='gnc' ? r.regPesos : r.acLts);
+  });
+  const keys = Object.keys(dm).sort();
+  const labels = keys.map(k => k.slice(5));
+  const vals   = keys.map(k=>dm[k]);
+  const vals2  = keys.map(k=>dm2[k]);
+
+  // Trend line
+  let trend = vals.map(()=>null);
+  if (vals.length > 1) {
+    const n=vals.length, xs=vals.map((_,i)=>i);
+    const xm=xs.reduce((a,b)=>a+b,0)/n, ym=vals.reduce((a,b)=>a+b,0)/n;
+    const den=xs.reduce((s,x)=>s+(x-xm)**2,0)||1;
+    const sl=xs.reduce((s,x,i)=>s+(x-xm)*(vals[i]-ym),0)/den;
+    const ic=ym-sl*xm;
+    trend = xs.map(x=>Math.max(0,Math.round(ic+sl*x)));
+  }
+
+  const mainColor = MODULE==='gnc' ? '#3b82f6' : '#22d3ee';
+  const mainLabel = MODULE==='gnc' ? 'm³ GNC' : 'Lts';
+  const aux2Label = MODULE==='gnc' ? 'Regalado $' : 'Aceite Lts';
+  const aux2Color = MODULE==='gnc' ? '#f97316' : '#22c55e';
+
+  document.getElementById('chartDailyTitle').textContent =
+    MODULE==='gnc' ? 'Tendencia Diaria — m³ GNC' : 'Tendencia Diaria — Litros Combustible';
+
+  const legendEl = document.getElementById('dailyLegend');
+  legendEl.innerHTML = [
+    `<span class="pill pill-blue">${mainLabel}</span>`,
+    `<span class="pill pill-gray">Tendencia</span>`,
+    `<span class="pill pill-orange">${aux2Label}</span>`,
+  ].join('');
+
+  mkChart('daily','chartDaily',{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:mainLabel,data:vals,backgroundColor:mainColor+'99',hoverBackgroundColor:mainColor,borderRadius:4,borderSkipped:false,order:2},
+      {label:'Tendencia',data:trend,type:'line',borderColor:'rgba(99,102,241,.65)',borderWidth:2,borderDash:[5,4],pointRadius:0,fill:false,tension:0,order:1},
+      {label:aux2Label,data:vals2,type:'line',borderColor:aux2Color,borderWidth:1.5,pointRadius:2,pointBackgroundColor:aux2Color,fill:false,tension:.3,order:1,yAxisID:'y2'}
+    ]},
+    options:{...CH_DEFAULTS,
+      plugins:{...CH_DEFAULTS.plugins,legend:{display:false},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{
+          label:c=>c.datasetIndex===2?` ${aux2Label}: ${MODULE==='gnc'?fmtPesos(c.parsed.y):fmt(c.parsed.y,1)+' L'}`:` ${c.parsed.y?.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`
+        }}
+      },
+      scales:{...CH_DEFAULTS.scales,
+        y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}},
+        y2:{position:'right',ticks:{color:aux2Color,font:{size:9},callback:v=>MODULE==='gnc'?'$'+Math.round(v/1000)+'k':v.toFixed(0)+'L'},grid:{display:false}}
+      }
+    }
+  });
 }
 
-function renderHistory(){
-  const data=filtered();
-  const totalGNC=data.reduce((s,r)=>s+r.gnc,0);
-  const totalAC=Math.round(data.reduce((s,r)=>s+r.ac,0)*10)/10;
-  const dias=new Set(data.map(r=>r.f)).size;
-  const avg=dias?Math.round(totalGNC/dias):0;
-  const byP={};
-  data.forEach(r=>{ if(!byP[r.p]){byP[r.p]={gnc:0,ac:0};} byP[r.p].gnc+=r.gnc; byP[r.p].ac+=r.ac; });
-  const sorted=Object.entries(byP).sort((a,b)=>b[1].gnc-a[1].gnc);
-  const lider=sorted[0];
-
-  document.getElementById('h-gnc').textContent=totalGNC.toLocaleString('es-AR');
-  document.getElementById('h-gnc-s').textContent=dias+' días con datos';
-  document.getElementById('h-avg').textContent=avg.toLocaleString('es-AR');
-  document.getElementById('h-ac').textContent=totalAC.toLocaleString('es-AR')+' L';
-  document.getElementById('h-lider').textContent=lider?lider[0]:'—';
-  document.getElementById('h-lider-s').textContent=lider?lider[1].gnc.toLocaleString('es-AR')+' m³':'—';
-  // ---- NEW: GNC REGALADO KPIs history ----
-  const hRP=data.reduce((s,r)=>s+r.rp,0);
-  const hRM=data.reduce((s,r)=>s+r.rm,0);
-  document.getElementById('h-reg-pesos').textContent='$ '+Math.round(hRP).toLocaleString('es-AR');
-  document.getElementById('h-reg-mts').textContent=Math.round(hRM).toLocaleString('es-AR');
-
-  const dailyMap={};
-  data.forEach(r=>{ if(!dailyMap[r.f])dailyMap[r.f]=0; dailyMap[r.f]+=r.gnc; });
-  const dKeys=Object.keys(dailyMap).sort((a,b)=>parseDate(a)-parseDate(b));
-  const dLabels=dKeys.map(d=>d.slice(0,5));
-  const dData=dKeys.map(d=>dailyMap[d]);
-
-  if(charts.dia){charts.dia.data.labels=dLabels;charts.dia.data.datasets[0].data=dData;charts.dia.update();}
-  else charts.dia=new Chart(document.getElementById('cDia'),{type:'bar',data:{labels:dLabels,datasets:[{label:'m³ GNC',data:dData,backgroundColor:'#1e6fd4',hoverBackgroundColor:'#4a9eff',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y.toLocaleString('es-AR')+' m³'}}},scales:{x:{ticks:{font:{size:10},maxRotation:45,autoSkip:true,color:'#7a7f92'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{font:{size:10},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}}}}});
-
-  const rNames=sorted.map(e=>e[0]);
-  const rGNC=sorted.map(e=>e[1].gnc);
-  const rAC=sorted.map(e=>Math.round(e[1].ac*10)/10);
-  document.getElementById('rankWrap').style.height=Math.max(rNames.length*44+80,200)+'px';
-
-  if(charts.rank){charts.rank.data.labels=rNames;charts.rank.data.datasets[0].data=rGNC;charts.rank.data.datasets[1].data=rAC;charts.rank.update();}
-  else charts.rank=new Chart(document.getElementById('cRank'),{type:'bar',data:{labels:rNames,datasets:[{label:'m³ GNC',data:rGNC,backgroundColor:'#1e6fd4',hoverBackgroundColor:'#4a9eff',borderRadius:3,borderSkipped:false,xAxisID:'x1'},{label:'Lts aceite',data:rAC,backgroundColor:'#1a8060',hoverBackgroundColor:'#2fcb8d',borderRadius:3,borderSkipped:false,xAxisID:'x2'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.datasetIndex===0?' '+c.parsed.x.toLocaleString('es-AR')+' m³':' '+c.parsed.x.toFixed(1)+' L'}}},scales:{y:{ticks:{font:{size:12},color:'#c8cad4'},grid:{display:false}},x1:{position:'top',ticks:{font:{size:9},color:'#4a9eff',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(74,158,255,.08)'},title:{display:true,text:'m³ GNC',font:{size:9},color:'#4a9eff'}},x2:{position:'bottom',ticks:{font:{size:9},color:'#2fcb8d',callback:v=>v.toFixed(1)},grid:{display:false},title:{display:true,text:'Lts aceite',font:{size:9},color:'#2fcb8d'}}}}}); 
-
-  const tData2=TURNOS.map(t=>data.filter(r=>r.t===t||r.t.toLowerCase()===t.toLowerCase()).reduce((s,r)=>s+r.gnc,0));
-  const tTotal2=tData2.reduce((a,b)=>a+b,0);
-  if(charts.turno){charts.turno.data.datasets[0].data=tData2;charts.turno.update();}
-  else charts.turno=new Chart(document.getElementById('cTurno'),{type:'doughnut',data:{labels:TURNOS,datasets:[{data:tData2,backgroundColor:TURNO_COLORS,borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.label+': '+c.parsed.toLocaleString('es-AR')+' m³'}}}}});
-
-  document.getElementById('dleg').innerHTML=TURNOS.map((l,i)=>{
-    const pct=tTotal2?Math.round(tData2[i]/tTotal2*100):0;
-    return `<div class="donut-leg-row"><span class="leg-sq" style="background:${TURNO_COLORS[i]}"></span><span style="color:#e8eaf0">${l}</span><span>${pct}% · ${tData2[i].toLocaleString('es-AR')}</span></div>`;
+function renderRanking(elId, rows) {
+  const ranking = buildRanking(rows);
+  const max = ranking[0] ? (MODULE==='gnc' ? ranking[0].gnc : ranking[0].liqTotal) : 1;
+  const colors = ['#3b82f6','#6366f1','#8b5cf6','#a78bfa','#c084fc','#ddd6fe'];
+  const el = document.getElementById(elId);
+  if (!ranking.length) { el.innerHTML = '<div class="text-xs text-center py-4" style="color:var(--muted)">Sin datos</div>'; return; }
+  el.innerHTML = ranking.slice(0,10).map((p,i)=>{
+    const main  = MODULE==='gnc' ? Math.round(p.gnc) : Math.round(p.liqTotal);
+    const sub   = MODULE==='gnc' ? `${fmt(p.acSuelto,1)} L aceite` : `${fmt(p.acLts,1)} L aceite`;
+    const pct   = Math.round(main/max*100);
+    const color = colors[i]||'#3b82f6';
+    return `<div class="flex items-center gap-2.5">
+      <span class="text-xs w-4 text-right mono" style="color:var(--muted)">${i+1}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-semibold text-white truncate">${p.name}</span>
+          <span class="text-xs mono ml-2 whitespace-nowrap" style="color:${color}">${fmt(main)} ${MODULE==='gnc'?'m³':'L'}</span>
+        </div>
+        <div class="rank-bar" style="width:${pct}%;background:${color}"></div>
+        <div class="text-xs mt-0.5" style="color:var(--muted)">${sub}</div>
+      </div>
+    </div>`;
   }).join('');
-
-  const mesMap={};
-  data.forEach(r=>{ if(!mesMap[r.m])mesMap[r.m]=0; mesMap[r.m]+=r.gnc; });
-  const mKeys=Object.keys(mesMap);
-  const mData=mKeys.map(k=>mesMap[k]);
-  if(charts.mes){charts.mes.data.labels=mKeys;charts.mes.data.datasets[0].data=mData;charts.mes.update();}
-  else charts.mes=new Chart(document.getElementById('cMes'),{type:'bar',data:{labels:mKeys,datasets:[{label:'m³',data:mData,backgroundColor:'#534ab7',hoverBackgroundColor:'#9b7fe8',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y.toLocaleString('es-AR')+' m³'}}},scales:{x:{ticks:{font:{size:10},color:'#7a7f92'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#7a7f92',callback:v=>v.toLocaleString('es-AR')},grid:{color:'rgba(255,255,255,.05)'}}}}});
 }
 
-function buildPills(id,items,selSet,onClass){
-  const el=document.getElementById(id);
-  const existing=[...el.querySelectorAll('.pill')].map(b=>b.dataset.val);
-  if(JSON.stringify(existing.slice(1))===JSON.stringify(items)){refreshPills(el,selSet,onClass,items);return;}
-  el.innerHTML='';
-  const allBtn=document.createElement('button');
-  allBtn.className='pill '+onClass; allBtn.textContent='Todos'; allBtn.dataset.val='__all__';
-  el.appendChild(allBtn);
-  items.forEach(v=>{ const b=document.createElement('button'); b.className='pill'; b.textContent=v; b.dataset.val=v; el.appendChild(b); });
-  el.onclick=e=>{ const btn=e.target.closest('.pill'); if(!btn)return; const val=btn.dataset.val;
-    if(val==='__all__'){ if(selSet.size===items.length)selSet.clear(); else items.forEach(i=>selSet.add(i)); }
-    else{ if(selSet.has(val))selSet.delete(val); else selSet.add(val); }
-    refreshPills(el,selSet,onClass,items); renderHistory(); };
-  refreshPills(el,selSet,onClass,items);
+function renderTurnoDonut(chartId, legendId, rows) {
+  const TURNOS = ['MAÑANA','TARDE','NOCHE'];
+  const TCOLORS = ['#3b82f6','#f97316','#a78bfa'];
+  const TLABELS = ['Mañana','Tarde','Noche'];
+  const key = MODULE==='gnc' ? 'gnc' : 'liqTotal';
+  const td = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+(r[key]||0),0));
+  const tot = td.reduce((a,b)=>a+b,0)||1;
+
+  mkChart(chartId,chartId,{type:'doughnut',
+    data:{labels:TLABELS,datasets:[{data:td,backgroundColor:TCOLORS,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'63%',
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1a2e',borderColor:'#1e2d45',borderWidth:1,
+        titleColor:'#e2e8f0',bodyColor:'#94a3b8',callbacks:{label:c=>` ${c.parsed.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}}}
+  });
+
+  if (legendId) {
+    document.getElementById(legendId).innerHTML = TLABELS.map((l,i)=>`
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${TCOLORS[i]}"></span><span class="text-xs" style="color:var(--muted)">${l}</span></div>
+        <span class="text-xs mono" style="color:var(--text)">${Math.round(td[i]/tot*100)}% · ${td[i].toLocaleString('es-AR')}</span>
+      </div>`).join('');
+  }
 }
 
-function refreshPills(el,selSet,onClass,items){
-  el.querySelectorAll('.pill').forEach(b=>{ const v=b.dataset.val;
-    b.className='pill '+(v==='__all__'?(selSet.size===items.length?onClass:''):(selSet.has(v)?onClass:'')); });
+function renderExtraCharts(rows) {
+  const TURNOS = ['MAÑANA','TARDE','NOCHE'];
+  const TLABELS = ['Mañana','Tarde','Noche'];
+  const TCOLORS = ['#3b82f6','#f97316','#a78bfa'];
+
+  if (MODULE==='gnc') {
+    // Extra1: Aceite suelto por turno
+    document.getElementById('chartExtra1Title').textContent = 'Aceite Suelto por Turno (Lts)';
+    const acData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.acSuelto,0));
+    mkChart('extra1','chartExtra1',{type:'bar',
+      data:{labels:TLABELS,datasets:[{data:acData,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
+      options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} L`}}},
+        scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toFixed(0)+'L'}}}}
+    });
+
+    // Extra2: GNC Regalado por turno
+    document.getElementById('chartExtra2Title').textContent = 'GNC Regalado por Turno ($)';
+    const regData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.regPesos,0));
+    const regMts  = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.regMts,0));
+    mkChart('extra2','chartExtra2',{type:'bar',
+      data:{labels:TLABELS,datasets:[
+        {label:'Reg. $',data:regData,backgroundColor:'rgba(249,115,22,.7)',borderRadius:4,borderSkipped:false,yAxisID:'yp'},
+        {label:'Reg. m³',data:regMts,backgroundColor:'rgba(167,139,250,.5)',borderRadius:4,borderSkipped:false,yAxisID:'ym'}
+      ]},
+      options:{...CH_DEFAULTS,plugins:{legend:{labels:{color:CHARTS.extra2?'#64748b':'#64748b',font:{size:10},boxWidth:8}},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>c.datasetIndex===0?` ${fmtPesos(c.parsed.y)}`:` ${c.parsed.y.toFixed(0)} m³`}}},
+        scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}},
+          yp:{position:'left',ticks:{color:'#f97316',font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.06)'}},
+          ym:{position:'right',ticks:{color:'#a78bfa',font:{size:9},callback:v=>v+'m³'},grid:{display:false}}}
+      }
+    });
+
+  } else {
+    // Extra1: Aceite Lts por turno
+    document.getElementById('chartExtra1Title').textContent = 'Lubricantes / Aceite por Turno (Lts)';
+    const acData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.acLts,0));
+    mkChart('extra1','chartExtra1',{type:'bar',
+      data:{labels:TLABELS,datasets:[{data:acData,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
+      options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} L`}}},
+        scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toFixed(0)+'L'}}}}
+    });
+
+    // Extra2: Heladera + Varios por turno
+    document.getElementById('chartExtra2Title').textContent = 'Heladera & Varios por Turno ($)';
+    const helData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.heladera,0));
+    const varData = TURNOS.map(t=>rows.filter(r=>r.turno===t).reduce((s,r)=>s+r.varios,0));
+    mkChart('extra2','chartExtra2',{type:'bar',
+      data:{labels:TLABELS,datasets:[
+        {label:'Heladera',data:helData,backgroundColor:'rgba(249,115,22,.7)',borderRadius:4,borderSkipped:false},
+        {label:'Varios',data:varData,backgroundColor:'rgba(34,211,238,.5)',borderRadius:4,borderSkipped:false}
+      ]},
+      options:{...CH_DEFAULTS,plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:8}},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${fmtPesos(c.parsed.y)}`}}},
+        scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>'$'+Math.round(v/1000)+'k'}}}
+      }
+    });
+  }
 }
 
-loadData();
-setInterval(loadData, 5*60*1000);
+function renderTable(rows) {
+  const sorted = [...rows].sort((a,b)=>b.date-a.date);
+  document.getElementById('tableCount').textContent = `${Math.min(rows.length,80)} de ${rows.length} registros`;
+
+  if (MODULE==='gnc') {
+    document.getElementById('tableHead').innerHTML = `<tr>
+      <th>Fecha</th><th>Turno</th><th>Playero</th>
+      <th class="text-right">m³ GNC</th><th class="text-right">Ac. Suelto L</th>
+      <th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th>
+      <th class="text-right">ExtraGNC $</th></tr>`;
+    document.getElementById('tableBody').innerHTML = sorted.slice(0,80).map(r=>`<tr>
+      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+      <td class="font-medium text-white">${r.playero||'—'}</td>
+      <td class="text-right mono" style="color:#60a5fa;font-weight:600">${fmt(r.gnc)}</td>
+      <td class="text-right mono" style="color:#4ade80">${r.acSuelto?fmt(r.acSuelto,1):'—'}</td>
+      <td class="text-right mono" style="color:#fb923c">${r.regPesos?fmtPesos(r.regPesos):'—'}</td>
+      <td class="text-right mono" style="color:#c084fc">${r.regMts?fmt(r.regMts):'—'}</td>
+      <td class="text-right mono" style="color:#94a3b8">${r.extraGNC?fmtPesos(r.extraGNC):'—'}</td>
+    </tr>`).join('');
+  } else {
+    document.getElementById('tableHead').innerHTML = `<tr>
+      <th>Fecha</th><th>Turno</th><th>Playero 1</th><th>Playero 2</th>
+      <th class="text-right">Liq. Total L</th><th class="text-right">Aceite Lts</th>
+      <th class="text-right">Heladera $</th><th class="text-right">Varios $</th></tr>`;
+    document.getElementById('tableBody').innerHTML = sorted.slice(0,80).map(r=>`<tr>
+      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+      <td class="font-medium text-white">${r.playero||'—'}</td>
+      <td style="color:var(--muted)">${r.playero2||'—'}</td>
+      <td class="text-right mono" style="color:#67e8f9;font-weight:600">${fmt(r.liqTotal,1)}</td>
+      <td class="text-right mono" style="color:#4ade80">${r.acLts?fmt(r.acLts,1):'—'}</td>
+      <td class="text-right mono" style="color:#fb923c">${r.heladera?fmtPesos(r.heladera):'—'}</td>
+      <td class="text-right mono" style="color:#c084fc">${r.varios?fmtPesos(r.varios):'—'}</td>
+    </tr>`).join('');
+  }
+}
+
+// ═══ RENDER HISTORIAL ═══
+let histTableView = 'detail'; // 'detail' | 'playero' | 'dia'
+
+function setHistTableView(view, el) {
+  histTableView = view;
+  ['detail','playero','dia'].forEach(v => {
+    document.getElementById('histTableView'+v.charAt(0).toUpperCase()+v.slice(1))?.classList.remove('active');
+  });
+  el.classList.add('active');
+  renderHistTable(getHistFiltered());
+}
+
+function buildHistPills() {
+  const histRows = getHistRows(RAW);
+  const months = [...new Set(histRows.map(r=>r.monthKey))].sort((a,b)=>{
+    const toDate = s => { const [mn,yr]=s.split(' '); return new Date(+('20'+yr), MN.indexOf(mn)-1,1); };
+    return toDate(a) - toDate(b);
+  });
+
+  const el = document.getElementById('histMesPills');
+  el.innerHTML = [
+    `<span class="pill pill-cyan ${histFilters.mes==='__all__'?'active':''}" data-val="__all__" onclick="selectHistMes('__all__',this)">Historial Completo</span>`,
+    ...months.map(m=>`<span class="pill pill-gray ${histFilters.mes===m?'active':''}" data-val="${m}" onclick="selectHistMes('${m}',this)">${m.toUpperCase()}</span>`)
+  ].join('');
+}
+
+function selectHistMes(val, el) {
+  histFilters.mes = val;
+  document.getElementById('histMesPills').querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderHist();
+}
+
+function getHistFiltered() {
+  const histRows = getHistRows(RAW);
+  return histRows.filter(r =>
+    (histFilters.mes==='__all__' || r.monthKey===histFilters.mes) &&
+    (!histFilters.turno   || r.turno===histFilters.turno) &&
+    (!histFilters.playero || r.playero===histFilters.playero || r.playero2===histFilters.playero)
+  );
+}
+
+function renderHist() {
+  if (!RAW.length) return;
+  const histRows = getHistRows(RAW);
+  buildPlayeroSelect(histRows, 'histFilterPlayero');
+  histFilters.playero = document.getElementById('histFilterPlayero').value;
+
+  const filtered = getHistFiltered();
+  const { totals } = aggregate(filtered, ()=>true);
+  const dias = [...new Set(filtered.map(r=>r.dateKey))].length;
+
+  // ── Info rápida ──
+  document.getElementById('histInfo').textContent =
+    `${filtered.length} registros · ${dias} días · ${[...new Set(filtered.map(r=>r.monthKey))].length} mes(es)`;
+
+  // Quick stats chips
+  const mainVal = MODULE==='gnc'
+    ? fmt(Math.round(totals.gnc))+' m³'
+    : fmt(totals.liqTotal,1)+' L';
+  document.getElementById('histQuickStats').innerHTML = `
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--muted)">Total período</div>
+      <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${MODULE==='gnc'?'#3b82f6':'#22d3ee'}">${mainVal}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--muted)">Prom diario</div>
+      <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#22c55e">${
+        dias ? (MODULE==='gnc' ? fmt(Math.round(totals.gnc/dias))+' m³' : fmt(totals.liqTotal/dias,1)+' L') : '—'
+      }</div>
+    </div>`;
+
+  // ── KPIs ──
+  renderKPIs('histKpiGrid', totals, dias, filtered.length);
+
+  // ── Chart mensual o diario según selección ──
+  const isSingleMonth = histFilters.mes !== '__all__';
+  if (isSingleMonth) {
+    // Mostrar gráfico diario del mes seleccionado
+    document.getElementById('histChartMensualTitle').textContent = `Detalle Diario — ${histFilters.mes.toUpperCase()}`;
+    document.getElementById('histChartMensualSub').textContent = 'Un punto por día';
+    renderHistDailyChart('histChartMensual', filtered);
+  } else {
+    // Mostrar evolución mensual acumulada
+    document.getElementById('histChartMensualTitle').textContent = 'Evolución Mensual';
+    document.getElementById('histChartMensualSub').textContent = 'Acumulado por mes';
+    renderHistMensualChart(filtered);
+  }
+
+  // ── Ranking ──
+  renderRanking('histRankingList', filtered);
+
+  // ── Turno donut con leyenda ──
+  const TURNOS=['MAÑANA','TARDE','NOCHE'], TLABELS=['Mañana','Tarde','Noche'], TCOLORS=['#3b82f6','#f97316','#a78bfa'];
+  const key = MODULE==='gnc'?'gnc':'liqTotal';
+  const td = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[key]||0),0));
+  const tot = td.reduce((a,b)=>a+b,0)||1;
+  mkChart('histTurno','histChartTurno',{type:'doughnut',
+    data:{labels:TLABELS,datasets:[{data:td,backgroundColor:TCOLORS,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'63%',
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1a2e',borderColor:'#1e2d45',borderWidth:1,
+        titleColor:'#e2e8f0',bodyColor:'#94a3b8',callbacks:{label:c=>` ${c.parsed.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}}}
+  });
+  document.getElementById('histTurnoLegend').innerHTML = TLABELS.map((l,i)=>`
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full" style="background:${TCOLORS[i]}"></span>
+        <span class="text-xs" style="color:var(--muted)">${l}</span>
+      </div>
+      <span class="text-xs mono" style="color:var(--text)">${Math.round(td[i]/tot*100)}% · ${td[i].toLocaleString('es-AR')}</span>
+    </div>`).join('');
+
+  // ── Auxiliar: aceite o lubricantes por turno ──
+  const aux2Key = MODULE==='gnc' ? 'acSuelto' : 'acLts';
+  const aux2Label = MODULE==='gnc' ? 'Aceite Suelto (L) por Turno' : 'Lubricantes (L) por Turno';
+  document.getElementById('histExtra1Title').textContent = aux2Label;
+  const td2 = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[aux2Key]||0),0));
+  mkChart('histExtra','histChartExtra',{type:'bar',
+    data:{labels:TLABELS,datasets:[{data:td2,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
+    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} L`}}},
+      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toFixed(0)+'L'}}}}
+  });
+
+  // ── Gráfico diario auxiliar (slot 3 de row 2) ──
+  if (isSingleMonth) {
+    document.getElementById('histDailyTitle').textContent = MODULE==='gnc' ? 'Aceite + Regalado Diario' : 'Heladera + Varios Diario';
+    renderHistAuxDailyChart(filtered);
+  } else {
+    document.getElementById('histDailyTitle').textContent = 'Comparativa por Mes';
+    renderHistCompChart(filtered);
+  }
+
+  // ── Tabla ──
+  renderHistTable(filtered);
+}
+
+function renderHistMensualChart(filtered) {
+  const mm = {};
+  filtered.forEach(r => {
+    mm[r.monthKey] = (mm[r.monthKey]||0) + (MODULE==='gnc' ? r.gnc : r.liqTotal);
+  });
+  const mKeys = Object.keys(mm).sort((a,b)=>{
+    const toD = s => { const [mn,yr]=s.split(' '); return new Date(+('20'+yr),MN.indexOf(mn)-1,1); };
+    return toD(a)-toD(b);
+  });
+  const color = MODULE==='gnc' ? '#3b82f6' : '#22d3ee';
+  mkChart('histMensual','histChartMensual',{type:'bar',
+    data:{labels:mKeys,datasets:[{data:mKeys.map(k=>mm[k]),backgroundColor:color+'99',hoverBackgroundColor:color,borderRadius:5,borderSkipped:false}]},
+    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
+      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}}
+  });
+}
+
+function renderHistDailyChart(chartId, filtered) {
+  const dm = {};
+  filtered.forEach(r => { dm[r.dateKey]=(dm[r.dateKey]||0)+(MODULE==='gnc'?r.gnc:r.liqTotal); });
+  const keys = Object.keys(dm).sort();
+  const color = MODULE==='gnc' ? '#3b82f6' : '#22d3ee';
+  mkChart(chartId, chartId, {type:'bar',
+    data:{labels:keys.map(k=>k.slice(5)),datasets:[{data:keys.map(k=>dm[k]),backgroundColor:color+'99',hoverBackgroundColor:color,borderRadius:3,borderSkipped:false}]},
+    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
+      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}}
+  });
+}
+
+function renderHistAuxDailyChart(filtered) {
+  const dm1={}, dm2={};
+  filtered.forEach(r=>{
+    if(MODULE==='gnc'){
+      dm1[r.dateKey]=(dm1[r.dateKey]||0)+r.acSuelto;
+      dm2[r.dateKey]=(dm2[r.dateKey]||0)+r.regPesos;
+    } else {
+      dm1[r.dateKey]=(dm1[r.dateKey]||0)+r.heladera;
+      dm2[r.dateKey]=(dm2[r.dateKey]||0)+r.varios;
+    }
+  });
+  const keys=Object.keys(dm1).sort();
+  const l1=MODULE==='gnc'?'Aceite L':'Heladera $';
+  const l2=MODULE==='gnc'?'Regalado $':'Varios $';
+  mkChart('histDaily','histChartDaily',{type:'line',
+    data:{labels:keys.map(k=>k.slice(5)),datasets:[
+      {label:l1,data:keys.map(k=>dm1[k]),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',borderWidth:2,pointRadius:2,fill:true,tension:.3},
+      {label:l2,data:keys.map(k=>dm2[k]),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.08)',borderWidth:2,pointRadius:2,fill:true,tension:.3,yAxisID:'y2'}
+    ]},
+    options:{...CH_DEFAULTS,plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:10}},
+      tooltip:{...CH_DEFAULTS.plugins.tooltip}},
+      scales:{...CH_DEFAULTS.scales,
+        y:{ticks:{color:'#22c55e',font:{size:9}},grid:{color:'rgba(255,255,255,.06)'}},
+        y2:{position:'right',ticks:{color:'#f97316',font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderHistCompChart(filtered) {
+  // Stacked bar: each month broken by turno
+  const TURNOS=['MAÑANA','TARDE','NOCHE'], TLABELS=['Mañana','Tarde','Noche'], TCOLORS=['#3b82f6','#f97316','#a78bfa'];
+  const key=MODULE==='gnc'?'gnc':'liqTotal';
+  const months=[...new Set(filtered.map(r=>r.monthKey))].sort((a,b)=>{
+    const toD=s=>{const[mn,yr]=s.split(' ');return new Date(+('20'+yr),MN.indexOf(mn)-1,1);};
+    return toD(a)-toD(b);
+  });
+  mkChart('histDaily','histChartDaily',{type:'bar',
+    data:{labels:months,datasets:TURNOS.map((t,i)=>({
+      label:TLABELS[i],
+      data:months.map(m=>filtered.filter(r=>r.monthKey===m&&r.turno===t).reduce((s,r)=>s+(r[key]||0),0)),
+      backgroundColor:TCOLORS[i]+'cc',borderRadius:3,borderSkipped:false
+    }))},
+    options:{...CH_DEFAULTS,
+      plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:10}},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
+      scales:{...CH_DEFAULTS.scales,x:{...CH_DEFAULTS.scales.x,stacked:true},y:{...CH_DEFAULTS.scales.y,stacked:true,
+        ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}
+    }
+  });
+}
+
+function renderHistTable(filtered) {
+  const sorted = [...filtered].sort((a,b)=>b.date-a.date);
+  document.getElementById('histTableCount').textContent = `${Math.min(sorted.length,150)} de ${sorted.length}`;
+
+  if (histTableView === 'playero') {
+    // Agrupado por playero
+    const ranking = buildRanking(filtered);
+    const head = MODULE==='gnc'
+      ? `<tr><th>#</th><th>Playero</th><th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th><th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`
+      : `<tr><th>#</th><th>Playero</th><th class="text-right">Liq. L</th><th class="text-right">Aceite L</th><th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
+    document.getElementById('histTableHead').innerHTML = head;
+    document.getElementById('histTableBody').innerHTML = ranking.map((p,i)=>{
+      if(MODULE==='gnc') return `<tr>
+        <td class="mono" style="color:var(--muted)">${i+1}</td>
+        <td class="font-semibold text-white">${p.name}</td>
+        <td class="text-right mono" style="color:#60a5fa;font-weight:700">${fmt(Math.round(p.gnc))}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(p.acSuelto,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">—</td>
+        <td class="text-right mono" style="color:#c084fc">—</td>
+      </tr>`;
+      return `<tr>
+        <td class="mono" style="color:var(--muted)">${i+1}</td>
+        <td class="font-semibold text-white">${p.name}</td>
+        <td class="text-right mono" style="color:#67e8f9;font-weight:700">${fmt(Math.round(p.liqTotal),1)}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(p.acLts,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">${fmtPesos(p.heladera)}</td>
+        <td class="text-right mono" style="color:#c084fc">${fmtPesos(p.varios)}</td>
+      </tr>`;
+    }).join('');
+
+  } else if (histTableView === 'dia') {
+    // Agrupado por día
+    const dm={};
+    filtered.forEach(r=>{
+      if(!dm[r.dateKey]) dm[r.dateKey]={dateKey:r.dateKey,monthKey:r.monthKey,gnc:0,acSuelto:0,regPesos:0,regMts:0,liqTotal:0,acLts:0,heladera:0,varios:0};
+      dm[r.dateKey].gnc+=r.gnc||0; dm[r.dateKey].acSuelto+=r.acSuelto||0;
+      dm[r.dateKey].regPesos+=r.regPesos||0; dm[r.dateKey].regMts+=r.regMts||0;
+      dm[r.dateKey].liqTotal+=r.liqTotal||0; dm[r.dateKey].acLts+=r.acLts||0;
+      dm[r.dateKey].heladera+=r.heladera||0; dm[r.dateKey].varios+=r.varios||0;
+    });
+    const days=Object.values(dm).sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
+    if(MODULE==='gnc'){
+      document.getElementById('histTableHead').innerHTML=`<tr><th>Fecha</th><th>Mes</th><th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th><th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=days.slice(0,150).map(d=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${d.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${d.monthKey}</td>
+        <td class="text-right mono" style="color:#60a5fa;font-weight:700">${fmt(Math.round(d.gnc))}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(d.acSuelto,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">${d.regPesos?fmtPesos(d.regPesos):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${d.regMts?fmt(d.regMts):'—'}</td>
+      </tr>`).join('');
+    } else {
+      document.getElementById('histTableHead').innerHTML=`<tr><th>Fecha</th><th>Mes</th><th class="text-right">Liq. L</th><th class="text-right">Aceite L</th><th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=days.slice(0,150).map(d=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${d.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${d.monthKey}</td>
+        <td class="text-right mono" style="color:#67e8f9;font-weight:700">${fmt(d.liqTotal,1)}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(d.acLts,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">${d.heladera?fmtPesos(d.heladera):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${d.varios?fmtPesos(d.varios):'—'}</td>
+      </tr>`).join('');
+    }
+
+  } else {
+    // Vista detalle: por jornada (default)
+    if(MODULE==='gnc'){
+      document.getElementById('histTableHead').innerHTML=`<tr>
+        <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
+        <th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th>
+        <th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=sorted.slice(0,150).map(r=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
+        <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+        <td class="font-medium text-white">${r.playero||'—'}</td>
+        <td class="text-right mono" style="color:#60a5fa;font-weight:600">${fmt(r.gnc)}</td>
+        <td class="text-right mono" style="color:#4ade80">${r.acSuelto?fmt(r.acSuelto,1):'—'}</td>
+        <td class="text-right mono" style="color:#fb923c">${r.regPesos?fmtPesos(r.regPesos):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${r.regMts?fmt(r.regMts):'—'}</td>
+      </tr>`).join('');
+    } else {
+      document.getElementById('histTableHead').innerHTML=`<tr>
+        <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
+        <th class="text-right">Liq. L</th><th class="text-right">Aceite L</th>
+        <th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=sorted.slice(0,150).map(r=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
+        <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+        <td class="font-medium text-white">${r.playero||'—'}</td>
+        <td class="text-right mono" style="color:#67e8f9;font-weight:600">${fmt(r.liqTotal,1)}</td>
+        <td class="text-right mono" style="color:#4ade80">${r.acLts?fmt(r.acLts,1):'—'}</td>
+        <td class="text-right mono" style="color:#fb923c">${r.heladera?fmtPesos(r.heladera):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${r.varios?fmtPesos(r.varios):'—'}</td>
+      </tr>`).join('');
+    }
+  }
+}
+
+// ═══ MAIN REFRESH ═══
+async function refresh() {
+  document.getElementById('lastUpdate').textContent = 'Actualizando…';
+  document.getElementById('loadingIndicator').style.removeProperty('display');
+  try {
+    const url = MODULE==='gnc' ? URL_GNC : URL_LIQ;
+    const txt = await loadData(url);
+    const rows = parseCSV(txt);
+    // skip header rows (first 2 if they have no valid date)
+    RAW = (MODULE==='gnc' ? parseGNC(rows) : parseLIQ(rows))
+          .filter(r => r.gnc > 0 || r.acSuelto > 0 || r.regMts > 0 || r.liqTotal > 0 || r.heladera > 0 || r.acLts > 0);
+
+    document.getElementById('lastUpdate').textContent =
+      'Actualizado ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('headerSub').textContent =
+      `${MODULE==='gnc'?'Control GNC':'Control Líquidos & Shop'} · ${RAW.length} registros cargados`;
+
+    if (VIEW==='mes') { renderMes(); }
+    else              { buildHistPills(); renderHist(); }
+
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = 'Error: ' + e.message;
+    console.error(e);
+  } finally {
+    document.getElementById('loadingIndicator').style.display = 'none';
+  }
+}
+
+// ═══ INIT ═══
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = 'rgba(255,255,255,.05)';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+
+refresh();
+setInterval(refresh, 5 * 60 * 1000);
 </script>
 </body>
 </html>
