@@ -251,64 +251,107 @@
   <!-- ─── HISTORIAL ─── -->
   <div id="viewHist" class="hidden fade-up">
 
-    <!-- HIST FILTERS -->
+    <!-- HIST FILTERS — dropdown mes + filtros secundarios -->
     <div class="card p-4 mb-5">
-      <div class="flex flex-wrap items-center gap-3 mb-3">
-        <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Período</span>
-        <div class="flex flex-wrap gap-1.5" id="histMesPills"></div>
-      </div>
-      <div class="flex flex-wrap items-center gap-3" id="histSecondaryFilters" style="display:none!important">
-        <div class="w-px h-5" style="background:var(--border)"></div>
-        <span class="text-xs font-medium" style="color:var(--muted)">TURNO</span>
-        <div class="flex gap-1.5" id="histFilterTurno">
-          <span class="pill pill-cyan active" data-val="" onclick="setHistFilter('turno','',this)">Todos</span>
-          <span class="pill pill-blue" data-val="MAÑANA" onclick="setHistFilter('turno','MAÑANA',this)">Mañana</span>
-          <span class="pill pill-orange" data-val="TARDE" onclick="setHistFilter('turno','TARDE',this)">Tarde</span>
-          <span class="pill pill-purple" data-val="NOCHE" onclick="setHistFilter('turno','NOCHE',this)">Noche</span>
+
+      <!-- FILA 1: selector de mes -->
+      <div class="flex flex-wrap items-center gap-4 mb-4">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Período</span>
+          <!-- Pills de mes (se generan dinámicamente) -->
+          <div class="flex flex-wrap gap-1.5" id="histMesPills"></div>
         </div>
-        <div class="w-px h-5" style="background:var(--border)"></div>
-        <span class="text-xs font-medium" style="color:var(--muted)">PLAYERO</span>
-        <select id="histFilterPlayero" onchange="renderHist()" style="font-size:11px;padding:4px 8px">
-          <option value="">Todos</option>
-        </select>
         <div class="ml-auto text-xs mono" style="color:var(--muted)" id="histInfo"></div>
+      </div>
+
+      <!-- FILA 2: filtros secundarios (turno + playero) -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+
+        <!-- Turno pills -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium uppercase tracking-wider" style="color:var(--muted)">Turno</span>
+          <div class="flex gap-1.5" id="histFilterTurno">
+            <span class="pill pill-cyan active" data-val="" onclick="setHistFilter('turno','',this)">Todos</span>
+            <span class="pill pill-blue"   data-val="MAÑANA" onclick="setHistFilter('turno','MAÑANA',this)">Mañana</span>
+            <span class="pill pill-orange" data-val="TARDE"  onclick="setHistFilter('turno','TARDE',this)">Tarde</span>
+            <span class="pill pill-purple" data-val="NOCHE"  onclick="setHistFilter('turno','NOCHE',this)">Noche</span>
+          </div>
+        </div>
+
+        <div style="width:1px;height:20px;background:var(--border)"></div>
+
+        <!-- Playero select -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium uppercase tracking-wider" style="color:var(--muted)">Playero</span>
+          <select id="histFilterPlayero" onchange="renderHist()" style="font-size:11px;padding:4px 10px">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <!-- Resumen rápido -->
+        <div id="histQuickStats" class="ml-auto flex gap-4"></div>
       </div>
     </div>
 
     <!-- HIST KPIs -->
     <div id="histKpiGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
 
-    <!-- HIST CHARTS -->
+    <!-- HIST CHARTS ROW 1 -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <!-- Evolución mensual o diaria según selección -->
       <div class="card p-5 lg:col-span-2">
-        <div class="font-semibold text-sm text-white mb-1">Evolución Mensual</div>
-        <div class="text-xs mb-4" style="color:var(--muted)">Acumulado por mes en el período seleccionado</div>
+        <div class="flex items-center justify-between mb-1">
+          <div class="font-semibold text-sm text-white" id="histChartMensualTitle">Evolución Mensual</div>
+          <span class="text-xs" style="color:var(--muted)" id="histChartMensualSub">Acumulado por mes</span>
+        </div>
         <div style="position:relative;height:210px"><canvas id="histChartMensual"></canvas></div>
       </div>
+      <!-- Ranking -->
       <div class="card p-5">
-        <div class="sec-title">Ranking Histórico</div>
+        <div class="sec-title">Ranking de Playeros</div>
         <div id="histRankingList" class="space-y-3 overflow-y-auto" style="max-height:260px"></div>
       </div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+    <!-- HIST CHARTS ROW 2 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <!-- Distribución por turno -->
       <div class="card p-5">
-        <div class="sec-title">Comparativa por Turno</div>
-        <div style="position:relative;height:190px"><canvas id="histChartTurno"></canvas></div>
+        <div class="sec-title">Distribución por Turno</div>
+        <div style="position:relative;height:170px"><canvas id="histChartTurno"></canvas></div>
+        <div id="histTurnoLegend" class="mt-3 space-y-1.5"></div>
       </div>
+      <!-- Auxiliar 1 -->
       <div class="card p-5">
-        <div class="sec-title" id="histExtra1Title">Distribución Auxiliar</div>
-        <div style="position:relative;height:190px"><canvas id="histChartExtra"></canvas></div>
+        <div class="sec-title" id="histExtra1Title">Aceite por Turno</div>
+        <div style="position:relative;height:195px"><canvas id="histChartExtra"></canvas></div>
+      </div>
+      <!-- Auxiliar 2: tendencia diaria del mes seleccionado -->
+      <div class="card p-5">
+        <div class="sec-title" id="histDailyTitle">Detalle Diario del Período</div>
+        <div style="position:relative;height:195px"><canvas id="histChartDaily"></canvas></div>
       </div>
     </div>
+
+    <!-- HIST TABLE -->
     <div class="card p-5">
-      <div class="flex items-center justify-between mb-3">
-        <div class="font-semibold text-sm text-white">Detalle Histórico</div>
-        <span class="text-xs mono" style="color:var(--muted)" id="histTableCount"></span>
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div class="font-semibold text-sm text-white">Detalle por Registro</div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs mono" style="color:var(--muted)" id="histTableCount"></span>
+          <!-- Vista agrupada vs detalle -->
+          <div class="flex gap-1.5">
+            <span class="pill pill-gray active" id="histTableViewDetail" onclick="setHistTableView('detail',this)">Por jornada</span>
+            <span class="pill pill-gray" id="histTableViewPlayero" onclick="setHistTableView('playero',this)">Por playero</span>
+            <span class="pill pill-gray" id="histTableViewDia" onclick="setHistTableView('dia',this)">Por día</span>
+          </div>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table><thead id="histTableHead"></thead><tbody id="histTableBody"></tbody></table>
       </div>
     </div>
+
   </div><!-- end viewHist -->
 
 </main>
@@ -1038,6 +1081,17 @@ function renderTable(rows) {
 }
 
 // ═══ RENDER HISTORIAL ═══
+let histTableView = 'detail'; // 'detail' | 'playero' | 'dia'
+
+function setHistTableView(view, el) {
+  histTableView = view;
+  ['detail','playero','dia'].forEach(v => {
+    document.getElementById('histTableView'+v.charAt(0).toUpperCase()+v.slice(1))?.classList.remove('active');
+  });
+  el.classList.add('active');
+  renderHistTable(getHistFiltered());
+}
+
 function buildHistPills() {
   const histRows = getHistRows(RAW);
   const months = [...new Set(histRows.map(r=>r.monthKey))].sort((a,b)=>{
@@ -1047,7 +1101,7 @@ function buildHistPills() {
 
   const el = document.getElementById('histMesPills');
   el.innerHTML = [
-    `<span class="pill pill-cyan ${histFilters.mes==='__all__'?'active':''}" data-val="__all__" onclick="selectHistMes('__all__',this)">HISTORIAL COMPLETO</span>`,
+    `<span class="pill pill-cyan ${histFilters.mes==='__all__'?'active':''}" data-val="__all__" onclick="selectHistMes('__all__',this)">Historial Completo</span>`,
     ...months.map(m=>`<span class="pill pill-gray ${histFilters.mes===m?'active':''}" data-val="${m}" onclick="selectHistMes('${m}',this)">${m.toUpperCase()}</span>`)
   ].join('');
 }
@@ -1056,12 +1110,6 @@ function selectHistMes(val, el) {
   histFilters.mes = val;
   document.getElementById('histMesPills').querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
-  const sf = document.getElementById('histSecondaryFilters');
-  sf.style.removeProperty('display');
-  sf.style.display = 'flex';
-  sf.style.flexWrap = 'wrap';
-  sf.style.alignItems = 'center';
-  sf.style.gap = '12px';
   renderHist();
 }
 
@@ -1081,19 +1129,95 @@ function renderHist() {
   histFilters.playero = document.getElementById('histFilterPlayero').value;
 
   const filtered = getHistFiltered();
-  const { totals } = aggregate(histRows, r => {
-    return (histFilters.mes==='__all__' || r.monthKey===histFilters.mes) &&
-           (!histFilters.turno   || r.turno===histFilters.turno) &&
-           (!histFilters.playero || r.playero===histFilters.playero);
-  });
-
+  const { totals } = aggregate(filtered, ()=>true);
   const dias = [...new Set(filtered.map(r=>r.dateKey))].length;
-  document.getElementById('histInfo').textContent = `${filtered.length} registros · ${dias} días`;
 
-  // KPIs
+  // ── Info rápida ──
+  document.getElementById('histInfo').textContent =
+    `${filtered.length} registros · ${dias} días · ${[...new Set(filtered.map(r=>r.monthKey))].length} mes(es)`;
+
+  // Quick stats chips
+  const mainVal = MODULE==='gnc'
+    ? fmt(Math.round(totals.gnc))+' m³'
+    : fmt(totals.liqTotal,1)+' L';
+  document.getElementById('histQuickStats').innerHTML = `
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--muted)">Total período</div>
+      <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${MODULE==='gnc'?'#3b82f6':'#22d3ee'}">${mainVal}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--muted)">Prom diario</div>
+      <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#22c55e">${
+        dias ? (MODULE==='gnc' ? fmt(Math.round(totals.gnc/dias))+' m³' : fmt(totals.liqTotal/dias,1)+' L') : '—'
+      }</div>
+    </div>`;
+
+  // ── KPIs ──
   renderKPIs('histKpiGrid', totals, dias, filtered.length);
 
-  // Monthly bar
+  // ── Chart mensual o diario según selección ──
+  const isSingleMonth = histFilters.mes !== '__all__';
+  if (isSingleMonth) {
+    // Mostrar gráfico diario del mes seleccionado
+    document.getElementById('histChartMensualTitle').textContent = `Detalle Diario — ${histFilters.mes.toUpperCase()}`;
+    document.getElementById('histChartMensualSub').textContent = 'Un punto por día';
+    renderHistDailyChart('histChartMensual', filtered);
+  } else {
+    // Mostrar evolución mensual acumulada
+    document.getElementById('histChartMensualTitle').textContent = 'Evolución Mensual';
+    document.getElementById('histChartMensualSub').textContent = 'Acumulado por mes';
+    renderHistMensualChart(filtered);
+  }
+
+  // ── Ranking ──
+  renderRanking('histRankingList', filtered);
+
+  // ── Turno donut con leyenda ──
+  const TURNOS=['MAÑANA','TARDE','NOCHE'], TLABELS=['Mañana','Tarde','Noche'], TCOLORS=['#3b82f6','#f97316','#a78bfa'];
+  const key = MODULE==='gnc'?'gnc':'liqTotal';
+  const td = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[key]||0),0));
+  const tot = td.reduce((a,b)=>a+b,0)||1;
+  mkChart('histTurno','histChartTurno',{type:'doughnut',
+    data:{labels:TLABELS,datasets:[{data:td,backgroundColor:TCOLORS,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'63%',
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1a2e',borderColor:'#1e2d45',borderWidth:1,
+        titleColor:'#e2e8f0',bodyColor:'#94a3b8',callbacks:{label:c=>` ${c.parsed.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}}}
+  });
+  document.getElementById('histTurnoLegend').innerHTML = TLABELS.map((l,i)=>`
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full" style="background:${TCOLORS[i]}"></span>
+        <span class="text-xs" style="color:var(--muted)">${l}</span>
+      </div>
+      <span class="text-xs mono" style="color:var(--text)">${Math.round(td[i]/tot*100)}% · ${td[i].toLocaleString('es-AR')}</span>
+    </div>`).join('');
+
+  // ── Auxiliar: aceite o lubricantes por turno ──
+  const aux2Key = MODULE==='gnc' ? 'acSuelto' : 'acLts';
+  const aux2Label = MODULE==='gnc' ? 'Aceite Suelto (L) por Turno' : 'Lubricantes (L) por Turno';
+  document.getElementById('histExtra1Title').textContent = aux2Label;
+  const td2 = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[aux2Key]||0),0));
+  mkChart('histExtra','histChartExtra',{type:'bar',
+    data:{labels:TLABELS,datasets:[{data:td2,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
+    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} L`}}},
+      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toFixed(0)+'L'}}}}
+  });
+
+  // ── Gráfico diario auxiliar (slot 3 de row 2) ──
+  if (isSingleMonth) {
+    document.getElementById('histDailyTitle').textContent = MODULE==='gnc' ? 'Aceite + Regalado Diario' : 'Heladera + Varios Diario';
+    renderHistAuxDailyChart(filtered);
+  } else {
+    document.getElementById('histDailyTitle').textContent = 'Comparativa por Mes';
+    renderHistCompChart(filtered);
+  }
+
+  // ── Tabla ──
+  renderHistTable(filtered);
+}
+
+function renderHistMensualChart(filtered) {
   const mm = {};
   filtered.forEach(r => {
     mm[r.monthKey] = (mm[r.monthKey]||0) + (MODULE==='gnc' ? r.gnc : r.liqTotal);
@@ -1102,73 +1226,176 @@ function renderHist() {
     const toD = s => { const [mn,yr]=s.split(' '); return new Date(+('20'+yr),MN.indexOf(mn)-1,1); };
     return toD(a)-toD(b);
   });
+  const color = MODULE==='gnc' ? '#3b82f6' : '#22d3ee';
   mkChart('histMensual','histChartMensual',{type:'bar',
-    data:{labels:mKeys,datasets:[{data:mKeys.map(k=>mm[k]),backgroundColor:'rgba(59,130,246,.6)',hoverBackgroundColor:'#3b82f6',borderRadius:5,borderSkipped:false}]},
+    data:{labels:mKeys,datasets:[{data:mKeys.map(k=>mm[k]),backgroundColor:color+'99',hoverBackgroundColor:color,borderRadius:5,borderSkipped:false}]},
     options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
       tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
       scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}}
   });
+}
 
-  // Ranking hist
-  renderRanking('histRankingList', filtered);
+function renderHistDailyChart(chartId, filtered) {
+  const dm = {};
+  filtered.forEach(r => { dm[r.dateKey]=(dm[r.dateKey]||0)+(MODULE==='gnc'?r.gnc:r.liqTotal); });
+  const keys = Object.keys(dm).sort();
+  const color = MODULE==='gnc' ? '#3b82f6' : '#22d3ee';
+  mkChart(chartId, chartId, {type:'bar',
+    data:{labels:keys.map(k=>k.slice(5)),datasets:[{data:keys.map(k=>dm[k]),backgroundColor:color+'99',hoverBackgroundColor:color,borderRadius:3,borderSkipped:false}]},
+    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
+      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
+      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}}
+  });
+}
 
-  // Turno comparison
+function renderHistAuxDailyChart(filtered) {
+  const dm1={}, dm2={};
+  filtered.forEach(r=>{
+    if(MODULE==='gnc'){
+      dm1[r.dateKey]=(dm1[r.dateKey]||0)+r.acSuelto;
+      dm2[r.dateKey]=(dm2[r.dateKey]||0)+r.regPesos;
+    } else {
+      dm1[r.dateKey]=(dm1[r.dateKey]||0)+r.heladera;
+      dm2[r.dateKey]=(dm2[r.dateKey]||0)+r.varios;
+    }
+  });
+  const keys=Object.keys(dm1).sort();
+  const l1=MODULE==='gnc'?'Aceite L':'Heladera $';
+  const l2=MODULE==='gnc'?'Regalado $':'Varios $';
+  mkChart('histDaily','histChartDaily',{type:'line',
+    data:{labels:keys.map(k=>k.slice(5)),datasets:[
+      {label:l1,data:keys.map(k=>dm1[k]),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',borderWidth:2,pointRadius:2,fill:true,tension:.3},
+      {label:l2,data:keys.map(k=>dm2[k]),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.08)',borderWidth:2,pointRadius:2,fill:true,tension:.3,yAxisID:'y2'}
+    ]},
+    options:{...CH_DEFAULTS,plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:10}},
+      tooltip:{...CH_DEFAULTS.plugins.tooltip}},
+      scales:{...CH_DEFAULTS.scales,
+        y:{ticks:{color:'#22c55e',font:{size:9}},grid:{color:'rgba(255,255,255,.06)'}},
+        y2:{position:'right',ticks:{color:'#f97316',font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderHistCompChart(filtered) {
+  // Stacked bar: each month broken by turno
   const TURNOS=['MAÑANA','TARDE','NOCHE'], TLABELS=['Mañana','Tarde','Noche'], TCOLORS=['#3b82f6','#f97316','#a78bfa'];
-  const key = MODULE==='gnc'?'gnc':'liqTotal';
-  const td = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[key]||0),0));
-  mkChart('histTurno','histChartTurno',{type:'bar',
-    data:{labels:TLABELS,datasets:[{data:td,backgroundColor:TCOLORS,borderRadius:5,borderSkipped:false}]},
-    options:{...CH_DEFAULTS,plugins:{...CH_DEFAULTS.plugins,
-      tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
-      scales:{...CH_DEFAULTS.scales,y:{...CH_DEFAULTS.scales.y,ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}}
+  const key=MODULE==='gnc'?'gnc':'liqTotal';
+  const months=[...new Set(filtered.map(r=>r.monthKey))].sort((a,b)=>{
+    const toD=s=>{const[mn,yr]=s.split(' ');return new Date(+('20'+yr),MN.indexOf(mn)-1,1);};
+    return toD(a)-toD(b);
   });
-
-  // Extra: auxiliary metric
-  const aux2Key = MODULE==='gnc' ? 'acSuelto' : 'acLts';
-  const aux2Label = MODULE==='gnc' ? 'Aceite Suelto (L)' : 'Lubricantes (L)';
-  document.getElementById('histExtra1Title').textContent = aux2Label+' por Turno';
-  const td2 = TURNOS.map(t=>filtered.filter(r=>r.turno===t).reduce((s,r)=>s+(r[aux2Key]||0),0));
-  mkChart('histExtra','histChartExtra',{type:'doughnut',
-    data:{labels:TLABELS,datasets:[{data:td2,backgroundColor:TCOLORS,borderWidth:0,hoverOffset:5}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-      plugins:{legend:{labels:{color:'#64748b',font:{size:11},boxWidth:10}},
-        tooltip:{backgroundColor:'#0f1a2e',borderColor:'#1e2d45',borderWidth:1,
-          titleColor:'#e2e8f0',bodyColor:'#94a3b8',callbacks:{label:c=>` ${c.parsed.toFixed(1)} L`}}}}
+  mkChart('histDaily','histChartDaily',{type:'bar',
+    data:{labels:months,datasets:TURNOS.map((t,i)=>({
+      label:TLABELS[i],
+      data:months.map(m=>filtered.filter(r=>r.monthKey===m&&r.turno===t).reduce((s,r)=>s+(r[key]||0),0)),
+      backgroundColor:TCOLORS[i]+'cc',borderRadius:3,borderSkipped:false
+    }))},
+    options:{...CH_DEFAULTS,
+      plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:10}},
+        tooltip:{...CH_DEFAULTS.plugins.tooltip,callbacks:{label:c=>` ${c.parsed.y.toLocaleString('es-AR')} ${MODULE==='gnc'?'m³':'L'}`}}},
+      scales:{...CH_DEFAULTS.scales,x:{...CH_DEFAULTS.scales.x,stacked:true},y:{...CH_DEFAULTS.scales.y,stacked:true,
+        ticks:{...CH_DEFAULTS.scales.y.ticks,callback:v=>v.toLocaleString('es-AR')}}}
+    }
   });
+}
 
-  // Table
-  document.getElementById('histTableCount').textContent = `${Math.min(filtered.length,100)} de ${filtered.length}`;
+function renderHistTable(filtered) {
   const sorted = [...filtered].sort((a,b)=>b.date-a.date);
-  if (MODULE==='gnc') {
-    document.getElementById('histTableHead').innerHTML = `<tr>
-      <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
-      <th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th>
-      <th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`;
-    document.getElementById('histTableBody').innerHTML = sorted.slice(0,100).map(r=>`<tr>
-      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
-      <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
-      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
-      <td class="font-medium text-white">${r.playero||'—'}</td>
-      <td class="text-right mono" style="color:#60a5fa;font-weight:600">${fmt(r.gnc)}</td>
-      <td class="text-right mono" style="color:#4ade80">${r.acSuelto?fmt(r.acSuelto,1):'—'}</td>
-      <td class="text-right mono" style="color:#fb923c">${r.regPesos?fmtPesos(r.regPesos):'—'}</td>
-      <td class="text-right mono" style="color:#c084fc">${r.regMts?fmt(r.regMts):'—'}</td>
-    </tr>`).join('');
+  document.getElementById('histTableCount').textContent = `${Math.min(sorted.length,150)} de ${sorted.length}`;
+
+  if (histTableView === 'playero') {
+    // Agrupado por playero
+    const ranking = buildRanking(filtered);
+    const head = MODULE==='gnc'
+      ? `<tr><th>#</th><th>Playero</th><th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th><th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`
+      : `<tr><th>#</th><th>Playero</th><th class="text-right">Liq. L</th><th class="text-right">Aceite L</th><th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
+    document.getElementById('histTableHead').innerHTML = head;
+    document.getElementById('histTableBody').innerHTML = ranking.map((p,i)=>{
+      if(MODULE==='gnc') return `<tr>
+        <td class="mono" style="color:var(--muted)">${i+1}</td>
+        <td class="font-semibold text-white">${p.name}</td>
+        <td class="text-right mono" style="color:#60a5fa;font-weight:700">${fmt(Math.round(p.gnc))}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(p.acSuelto,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">—</td>
+        <td class="text-right mono" style="color:#c084fc">—</td>
+      </tr>`;
+      return `<tr>
+        <td class="mono" style="color:var(--muted)">${i+1}</td>
+        <td class="font-semibold text-white">${p.name}</td>
+        <td class="text-right mono" style="color:#67e8f9;font-weight:700">${fmt(Math.round(p.liqTotal),1)}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(p.acLts,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">${fmtPesos(p.heladera)}</td>
+        <td class="text-right mono" style="color:#c084fc">${fmtPesos(p.varios)}</td>
+      </tr>`;
+    }).join('');
+
+  } else if (histTableView === 'dia') {
+    // Agrupado por día
+    const dm={};
+    filtered.forEach(r=>{
+      if(!dm[r.dateKey]) dm[r.dateKey]={dateKey:r.dateKey,monthKey:r.monthKey,gnc:0,acSuelto:0,regPesos:0,regMts:0,liqTotal:0,acLts:0,heladera:0,varios:0};
+      dm[r.dateKey].gnc+=r.gnc||0; dm[r.dateKey].acSuelto+=r.acSuelto||0;
+      dm[r.dateKey].regPesos+=r.regPesos||0; dm[r.dateKey].regMts+=r.regMts||0;
+      dm[r.dateKey].liqTotal+=r.liqTotal||0; dm[r.dateKey].acLts+=r.acLts||0;
+      dm[r.dateKey].heladera+=r.heladera||0; dm[r.dateKey].varios+=r.varios||0;
+    });
+    const days=Object.values(dm).sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
+    if(MODULE==='gnc'){
+      document.getElementById('histTableHead').innerHTML=`<tr><th>Fecha</th><th>Mes</th><th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th><th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=days.slice(0,150).map(d=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${d.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${d.monthKey}</td>
+        <td class="text-right mono" style="color:#60a5fa;font-weight:700">${fmt(Math.round(d.gnc))}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(d.acSuelto,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">${d.regPesos?fmtPesos(d.regPesos):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${d.regMts?fmt(d.regMts):'—'}</td>
+      </tr>`).join('');
+    } else {
+      document.getElementById('histTableHead').innerHTML=`<tr><th>Fecha</th><th>Mes</th><th class="text-right">Liq. L</th><th class="text-right">Aceite L</th><th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=days.slice(0,150).map(d=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${d.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${d.monthKey}</td>
+        <td class="text-right mono" style="color:#67e8f9;font-weight:700">${fmt(d.liqTotal,1)}</td>
+        <td class="text-right mono" style="color:#4ade80">${fmt(d.acLts,1)}</td>
+        <td class="text-right mono" style="color:#fb923c">${d.heladera?fmtPesos(d.heladera):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${d.varios?fmtPesos(d.varios):'—'}</td>
+      </tr>`).join('');
+    }
+
   } else {
-    document.getElementById('histTableHead').innerHTML = `<tr>
-      <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
-      <th class="text-right">Liq. L</th><th class="text-right">Aceite L</th>
-      <th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
-    document.getElementById('histTableBody').innerHTML = sorted.slice(0,100).map(r=>`<tr>
-      <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
-      <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
-      <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
-      <td class="font-medium text-white">${r.playero||'—'}</td>
-      <td class="text-right mono" style="color:#67e8f9;font-weight:600">${fmt(r.liqTotal,1)}</td>
-      <td class="text-right mono" style="color:#4ade80">${r.acLts?fmt(r.acLts,1):'—'}</td>
-      <td class="text-right mono" style="color:#fb923c">${r.heladera?fmtPesos(r.heladera):'—'}</td>
-      <td class="text-right mono" style="color:#c084fc">${r.varios?fmtPesos(r.varios):'—'}</td>
-    </tr>`).join('');
+    // Vista detalle: por jornada (default)
+    if(MODULE==='gnc'){
+      document.getElementById('histTableHead').innerHTML=`<tr>
+        <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
+        <th class="text-right">m³ GNC</th><th class="text-right">Aceite L</th>
+        <th class="text-right">Reg. $</th><th class="text-right">Reg. m³</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=sorted.slice(0,150).map(r=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
+        <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+        <td class="font-medium text-white">${r.playero||'—'}</td>
+        <td class="text-right mono" style="color:#60a5fa;font-weight:600">${fmt(r.gnc)}</td>
+        <td class="text-right mono" style="color:#4ade80">${r.acSuelto?fmt(r.acSuelto,1):'—'}</td>
+        <td class="text-right mono" style="color:#fb923c">${r.regPesos?fmtPesos(r.regPesos):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${r.regMts?fmt(r.regMts):'—'}</td>
+      </tr>`).join('');
+    } else {
+      document.getElementById('histTableHead').innerHTML=`<tr>
+        <th>Fecha</th><th>Mes</th><th>Turno</th><th>Playero</th>
+        <th class="text-right">Liq. L</th><th class="text-right">Aceite L</th>
+        <th class="text-right">Heladera</th><th class="text-right">Varios</th></tr>`;
+      document.getElementById('histTableBody').innerHTML=sorted.slice(0,150).map(r=>`<tr>
+        <td class="mono text-xs" style="color:var(--muted)">${r.dateKey}</td>
+        <td class="text-xs" style="color:var(--muted)">${r.monthKey}</td>
+        <td><span class="${turnoClass(r.turno)}">${r.turno}</span></td>
+        <td class="font-medium text-white">${r.playero||'—'}</td>
+        <td class="text-right mono" style="color:#67e8f9;font-weight:600">${fmt(r.liqTotal,1)}</td>
+        <td class="text-right mono" style="color:#4ade80">${r.acLts?fmt(r.acLts,1):'—'}</td>
+        <td class="text-right mono" style="color:#fb923c">${r.heladera?fmtPesos(r.heladera):'—'}</td>
+        <td class="text-right mono" style="color:#c084fc">${r.varios?fmtPesos(r.varios):'—'}</td>
+      </tr>`).join('');
+    }
   }
 }
 
